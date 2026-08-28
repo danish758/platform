@@ -36,18 +36,18 @@ export default async function EditExperimentPage({
     description: row.description ?? '',
     conversionEvent: row.conversionEvent ?? '',
     status: config.status,
-    variants: parseVariantsWithLabels(row).map((v) => ({
+    variants: parseVariantsWithLabels(row).map((variant) => ({
       id: crypto.randomUUID(),
-      key: v.key,
+      key: variant.key,
       keyEdited: true,
-      weight: v.weight,
-      label: v.label ?? '',
+      weight: variant.weight,
+      label: variant.label ?? '',
     })),
-    targeting: (config.targeting ?? []).map((r) => ({
+    targeting: (config.targeting ?? []).map((rule) => ({
       id: crypto.randomUUID(),
-      attribute: r.attribute,
-      operator: r.operator,
-      value: targetingValueToChips(r.value),
+      attribute: rule.attribute,
+      operator: rule.operator,
+      value: targetingValueToChips(rule.value),
     })),
   };
 

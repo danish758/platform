@@ -55,7 +55,7 @@ export async function PATCH(request: Request, { params }: Params) {
   const mergedConfig: ExperimentConfig = {
     key,
     status: body.status ?? existingConfig.status,
-    variants: mergedVariants.map((v) => ({ key: v.key, weight: v.weight })),
+    variants: mergedVariants.map((variant) => ({ key: variant.key, weight: variant.weight })),
     targeting: body.targeting !== undefined ? body.targeting : existingConfig.targeting,
     seed: body.seed !== undefined ? body.seed : existingConfig.seed,
   };

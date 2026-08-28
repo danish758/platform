@@ -54,7 +54,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     // here so validateConfig() (from @cro-engine/assignment-engine) sees
     // exactly the {key, weight} shape it expects; the label-bearing
     // `variants` array below is what actually gets persisted.
-    variants: variants.map((v) => ({ key: v.key, weight: v.weight })),
+    variants: variants.map((variant) => ({ key: variant.key, weight: variant.weight })),
     targeting,
   };
 

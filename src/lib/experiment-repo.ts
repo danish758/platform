@@ -25,7 +25,7 @@ export function toConfig(row: ExperimentRow): ExperimentConfig {
   return {
     key: row.key,
     status: row.status as ExperimentConfig['status'],
-    variants: (JSON.parse(row.variantsJson) as VariantWithLabel[]).map((v) => ({ key: v.key, weight: v.weight })),
+    variants: (JSON.parse(row.variantsJson) as VariantWithLabel[]).map((variant) => ({ key: variant.key, weight: variant.weight })),
     targeting: row.targetingJson ? JSON.parse(row.targetingJson) : undefined,
     seed: row.seed ?? undefined,
   };

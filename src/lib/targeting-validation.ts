@@ -23,7 +23,7 @@ export async function validateTargeting(projectId: string, rules: TargetingRule[
   const contextKeys = rules.length > 0
     ? await prisma.contextKey.findMany({ where: { projectId } })
     : [];
-  const byKey = new Map(contextKeys.map((k) => [k.key, k]));
+  const byKey = new Map(contextKeys.map((contextKey) => [contextKey.key, contextKey]));
 
   for (const rule of rules) {
     if (!rule.attribute || rule.attribute.trim().length === 0) {

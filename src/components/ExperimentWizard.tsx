@@ -87,20 +87,20 @@ export function ExperimentWizard({
   const [status, setStatus] = useState<ExperimentConfig['status']>(initialStatus);
   const [variants, setVariants] = useState<VariantRow[]>(initialVariants);
 
-  function handleVariantLabelChange(i: number, label: string) {
+  function handleVariantLabelChange(index: number, label: string) {
     const next = [...variants];
-    const row = next[i];
-    next[i] = { ...row, label, key: row.keyEdited ? row.key : slugify(label) };
+    const row = next[index];
+    next[index] = { ...row, label, key: row.keyEdited ? row.key : slugify(label) };
     setVariants(next);
   }
 
-  function handleWeightInputChange(i: number, newWeight: number) {
-    const nextWeights = rebalanceProportional(variants.map((v) => v.weight), i, newWeight);
-    setVariants(variants.map((v, idx) => ({ ...v, weight: nextWeights[idx] })));
+  function handleWeightInputChange(index: number, newWeight: number) {
+    const nextWeights = rebalanceProportional(variants.map((variant) => variant.weight), index, newWeight);
+    setVariants(variants.map((variant, variantIndex) => ({ ...variant, weight: nextWeights[variantIndex] })));
   }
   const [targeting, setTargeting] = useState<TargetingRow[]>(initialTargeting);
 
-  const contextKeyByName = new Map(contextKeys.map((k) => [k.key, k]));
+  const contextKeyByName = new Map(contextKeys.map((contextKey) => [contextKey.key, contextKey]));
   function operatorsFor(attribute: string): TargetingOperator[] {
     const { type } = contextKeyByName.get(attribute) || {};
     return OPERATORS_BY_TYPE[(type ?? 'string') as ContextKeyType];
@@ -117,7 +117,7 @@ export function ExperimentWizard({
   const clientConfig: ExperimentConfig = {
     key: key || 'placeholder',
     status,
-    variants: variants.map((v) => ({ key: v.key, weight: v.weight })),
+    variants: variants.map((variant) => ({ key: variant.key, weight: variant.weight })),
   };
   // Live feedback as the admin types — the same validateConfig() the server
   // re-checks on submit, imported directly since assignment-engine is
@@ -134,7 +134,7 @@ export function ExperimentWizard({
       description,
       conversionEvent,
       status,
-      variants: variants.map((v) => ({ key: v.key, weight: v.weight, label: v.label.trim() || undefined })),
+      variants: variants.map((variant) => ({ key: variant.key, weight: variant.weight, label: variant.label.trim() || undefined })),
       // Always send a real array, even when empty — the PATCH route treats
       // a genuinely missing `targeting` key as "leave it unchanged" (partial
       // update semantics), so sending `undefined` here for "no rules" was
@@ -169,14 +169,14 @@ export function ExperimentWizard({
   return (
     <div className="mx-auto max-w-2xl px-6 py-16">
       <div className="mb-8 flex gap-2">
-        {STEPS.map((label, i) => (
+        {STEPS.map((label, index) => (
           <div
             key={label}
             className={`flex-1 border-b-2 pb-2 text-center text-xs font-medium ${
-              i === step ? 'border-slate-900 text-slate-900' : 'border-slate-200 text-slate-400'
+              index === step ? 'border-slate-900 text-slate-900' : 'border-slate-200 text-slate-400'
             }`}
           >
-            {i + 1}. {label}
+            {index + 1}. {label}
           </div>
         ))}
       </div>
@@ -249,17 +249,17 @@ export function ExperimentWizard({
           </p>
 
           <VariantAllocationSliders
-            segments={variants.map((v) => ({ id: v.id, label: v.label || v.key || 'variant', weight: v.weight }))}
+            segments={variants.map((variant) => ({ id: variant.id, label: variant.label || variant.key || 'variant', weight: variant.weight }))}
             onChangeWeight={handleWeightInputChange}
           />
 
-          {variants.map((variant, i) => (
+          {variants.map((variant, index) => (
             <div key={variant.id} className="flex items-end gap-3">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-slate-700">Label</label>
                 <input
                   value={variant.label}
-                  onChange={(e) => handleVariantLabelChange(i, e.target.value)}
+                  onChange={(e) => handleVariantLabelChange(index, e.target.value)}
                   className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
                   placeholder="e.g. Green button"
                 />
@@ -270,7 +270,7 @@ export function ExperimentWizard({
                   value={variant.key}
                   onChange={(e) => {
                     const next = [...variants];
-                    next[i] = { ...variant, key: e.target.value, keyEdited: true };
+                    next[index] = { ...variant, key: e.target.value, keyEdited: true };
                     setVariants(next);
                   }}
                   className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-mono"
@@ -279,8 +279,8 @@ export function ExperimentWizard({
               <button
                 type="button"
                 onClick={() => {
-                  const remaining = variants.filter((v) => v.id !== variant.id);
-                  setVariants(remaining.map((v, idx) => ({ ...v, weight: equalSplit(remaining.length)[idx] })));
+                  const remaining = variants.filter((otherVariant) => otherVariant.id !== variant.id);
+                  setVariants(remaining.map((remainingVariant, remainingIndex) => ({ ...remainingVariant, weight: equalSplit(remaining.length)[remainingIndex] })));
                 }}
                 disabled={variants.length <= 2}
                 className="rounded-md px-2 py-2 text-sm text-rose-600 disabled:opacity-30"
@@ -293,7 +293,7 @@ export function ExperimentWizard({
             type="button"
             onClick={() => {
               const nextVariants = [...variants, { id: newId(), key: '', keyEdited: false, weight: 0, label: '' }];
-              setVariants(nextVariants.map((v, idx) => ({ ...v, weight: equalSplit(nextVariants.length)[idx] })));
+              setVariants(nextVariants.map((variant, index) => ({ ...variant, weight: equalSplit(nextVariants.length)[index] })));
             }}
             className="text-sm font-medium text-slate-700 underline"
           >
@@ -302,8 +302,8 @@ export function ExperimentWizard({
 
           {liveErrors.length > 0 && (
             <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-800">
-              {liveErrors.map((e) => (
-                <div key={e}>{e}</div>
+              {liveErrors.map((error) => (
+                <div key={error}>{error}</div>
               ))}
             </div>
           )}
@@ -320,7 +320,7 @@ export function ExperimentWizard({
               No context keys yet — add one from the project page before creating targeting rules.
             </p>
           )}
-          {targeting.map((rule, i) => {
+          {targeting.map((rule, index) => {
             const { type: ruleKeyType } = contextKeyByName.get(rule.attribute) || {};
             const keyType = (ruleKeyType ?? 'string') as ContextKeyType;
             const allowedOperators = operatorsFor(rule.attribute);
@@ -334,7 +334,7 @@ export function ExperimentWizard({
                       const nextAttribute = e.target.value;
                       const nextAllowed = operatorsFor(nextAttribute);
                       const next = [...targeting];
-                      next[i] = {
+                      next[index] = {
                         ...rule,
                         attribute: nextAttribute,
                         operator: nextAllowed.includes(rule.operator) ? rule.operator : nextAllowed[0],
@@ -344,9 +344,9 @@ export function ExperimentWizard({
                     }}
                     className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
                   >
-                    {contextKeys.map((ck) => (
-                      <option key={ck.id} value={ck.key}>
-                        {ck.label || ck.key}
+                    {contextKeys.map((contextKey) => (
+                      <option key={contextKey.id} value={contextKey.key}>
+                        {contextKey.label || contextKey.key}
                       </option>
                     ))}
                   </select>
@@ -359,7 +359,7 @@ export function ExperimentWizard({
                       const nextOperator = e.target.value as TargetingOperator;
                       const next = [...targeting];
                       const max = maxValuesFor(nextOperator);
-                      next[i] = {
+                      next[index] = {
                         ...rule,
                         operator: nextOperator,
                         value: max ? rule.value.slice(0, max) : rule.value,
@@ -368,9 +368,9 @@ export function ExperimentWizard({
                     }}
                     className="mt-1 rounded-md border border-slate-300 px-2 py-2 text-sm"
                   >
-                    {allowedOperators.map((op) => (
-                      <option key={op} value={op}>
-                        {OPERATOR_LABELS[op]}
+                    {allowedOperators.map((operator) => (
+                      <option key={operator} value={operator}>
+                        {OPERATOR_LABELS[operator]}
                       </option>
                     ))}
                   </select>
@@ -383,14 +383,14 @@ export function ExperimentWizard({
                     max={maxValuesFor(rule.operator)}
                     onChange={(nextValue) => {
                       const next = [...targeting];
-                      next[i] = { ...rule, value: nextValue };
+                      next[index] = { ...rule, value: nextValue };
                       setTargeting(next);
                     }}
                   />
                 </div>
                 <button
                   type="button"
-                  onClick={() => setTargeting(targeting.filter((r) => r.id !== rule.id))}
+                  onClick={() => setTargeting(targeting.filter((otherRule) => otherRule.id !== rule.id))}
                   className="rounded-md px-2 py-2 text-sm text-rose-600"
                 >
                   Remove
@@ -428,11 +428,11 @@ export function ExperimentWizard({
           <div>
             <div className="font-medium">Variants</div>
             <ul className="mt-1 list-disc pl-5">
-              {variants.map((v) => (
-                <li key={v.id}>
-                  {v.label || v.key}
-                  {v.label && v.label !== v.key && <code className="ml-1.5 text-xs text-slate-400">{v.key}</code>}
-                  {' '}— {v.weight}%
+              {variants.map((variant) => (
+                <li key={variant.id}>
+                  {variant.label || variant.key}
+                  {variant.label && variant.label !== variant.key && <code className="ml-1.5 text-xs text-slate-400">{variant.key}</code>}
+                  {' '}— {variant.weight}%
                 </li>
               ))}
             </ul>
@@ -441,12 +441,12 @@ export function ExperimentWizard({
             <div>
               <div className="font-medium">Targeting</div>
               <ul className="mt-1 list-disc pl-5">
-                {targeting.map((r) => {
-                  const { label } = contextKeyByName.get(r.attribute) || {};
+                {targeting.map((rule) => {
+                  const { label } = contextKeyByName.get(rule.attribute) || {};
                   return (
-                    <li key={r.id}>
-                      {label || r.attribute} {OPERATOR_LABELS[r.operator]}{' '}
-                      {r.value.join(', ')}
+                    <li key={rule.id}>
+                      {label || rule.attribute} {OPERATOR_LABELS[rule.operator]}{' '}
+                      {rule.value.join(', ')}
                     </li>
                   );
                 })}
@@ -455,8 +455,8 @@ export function ExperimentWizard({
           )}
           {serverErrors.length > 0 && (
             <div className="rounded-md bg-rose-50 p-3 text-rose-800">
-              {serverErrors.map((e) => (
-                <div key={e}>{e}</div>
+              {serverErrors.map((error) => (
+                <div key={error}>{error}</div>
               ))}
             </div>
           )}

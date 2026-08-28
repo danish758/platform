@@ -34,15 +34,15 @@ export function TagInput({
 
   return (
     <div className="mt-1 flex flex-wrap items-center gap-1.5 rounded-md border border-slate-300 px-2 py-1.5">
-      {values.map((value, i) => (
+      {values.map((value, index) => (
         <span
-          key={`${value}-${i}`}
+          key={`${value}-${index}`}
           className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs"
         >
           {value}
           <button
             type="button"
-            onClick={() => onChange(values.filter((_, vi) => vi !== i))}
+            onClick={() => onChange(values.filter((_, valueIndex) => valueIndex !== index))}
             className="text-slate-400 hover:text-slate-700"
             aria-label={`Remove ${value}`}
           >

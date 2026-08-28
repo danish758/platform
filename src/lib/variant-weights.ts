@@ -12,7 +12,7 @@ export function equalSplit(n: number, total = 100): number[] {
   if (n <= 0) return [];
   const base = Math.floor(total / n);
   const remainder = total - base * n;
-  return Array.from({ length: n }, (_, i) => base + (i < remainder ? 1 : 0));
+  return Array.from({ length: n }, (_, index) => base + (index < remainder ? 1 : 0));
 }
 
 /**
@@ -33,34 +33,34 @@ export function rebalanceProportional(weights: number[], changedIndex: number, n
 
   const clamped = Math.max(0, Math.min(100, Math.round(newWeight)));
   const remaining = 100 - clamped;
-  const otherIndices = weights.map((_, i) => i).filter((i) => i !== changedIndex);
-  const othersTotal = otherIndices.reduce((sum, i) => sum + weights[i], 0);
+  const otherIndices = weights.map((_, index) => index).filter((index) => index !== changedIndex);
+  const othersTotal = otherIndices.reduce((sum, index) => sum + weights[index], 0);
 
   const next = [...weights];
   next[changedIndex] = clamped;
 
   if (othersTotal === 0) {
     const shares = equalSplit(otherIndices.length, remaining);
-    otherIndices.forEach((idx, k) => {
-      next[idx] = shares[k];
+    otherIndices.forEach((otherIndex, position) => {
+      next[otherIndex] = shares[position];
     });
     return next;
   }
 
-  const raw = otherIndices.map((i) => (weights[i] / othersTotal) * remaining);
+  const raw = otherIndices.map((index) => (weights[index] / othersTotal) * remaining);
   const floors = raw.map(Math.floor);
-  const allocated = floors.reduce((a, b) => a + b, 0);
+  const allocated = floors.reduce((total, floor) => total + floor, 0);
   const leftover = remaining - allocated;
   const byLargestRemainder = raw
-    .map((v, k) => ({ k, frac: v - floors[k] }))
-    .sort((a, b) => b.frac - a.frac);
+    .map((share, position) => ({ position, frac: share - floors[position] }))
+    .sort((first, second) => second.frac - first.frac);
 
   const shares = [...floors];
   for (let j = 0; j < leftover; j++) {
-    shares[byLargestRemainder[j % byLargestRemainder.length].k] += 1;
+    shares[byLargestRemainder[j % byLargestRemainder.length].position] += 1;
   }
-  otherIndices.forEach((idx, k) => {
-    next[idx] = shares[k];
+  otherIndices.forEach((otherIndex, position) => {
+    next[otherIndex] = shares[position];
   });
 
   return next;

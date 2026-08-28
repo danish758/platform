@@ -48,15 +48,15 @@ export async function POST(request: Request) {
 
   const { exposures = [], conversions = [] } = body || {};
 
-  await Promise.all(exposures.map((e) => logExposure(projectId, e)));
+  await Promise.all(exposures.map((exposure) => logExposure(projectId, exposure)));
 
   if (conversions.length > 0) {
     await prisma.conversion.createMany({
-      data: conversions.map((c) => ({
+      data: conversions.map((conversion) => ({
         projectId,
-        userId: c.userId,
-        eventName: c.eventName,
-        value: c.value ?? null,
+        userId: conversion.userId,
+        eventName: conversion.eventName,
+        value: conversion.value ?? null,
       })),
     });
   }

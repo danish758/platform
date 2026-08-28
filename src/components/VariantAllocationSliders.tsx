@@ -46,10 +46,10 @@ function trackBackground(color: string, weight: number): string {
 function DonutChart({ segments }: { segments: Segment[] }) {
   let cumulative = 0;
   const stops = segments
-    .map((s, i) => {
+    .map((segment, index) => {
       const start = cumulative;
-      cumulative += s.weight;
-      return `${colorFor(i)} ${start}% ${cumulative}%`;
+      cumulative += segment.weight;
+      return `${colorFor(index)} ${start}% ${cumulative}%`;
     })
     .join(', ');
 
@@ -83,29 +83,29 @@ export function VariantAllocationSliders({
       <DonutChart segments={segments} />
 
       <div className="flex-1 space-y-4">
-        {segments.map((s, i) => (
-          <div key={s.id}>
+        {segments.map((segment, index) => (
+          <div key={segment.id}>
             <div className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: colorFor(i) }} />
-              <span className="truncate">{s.label}</span>
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: colorFor(index) }} />
+              <span className="truncate">{segment.label}</span>
             </div>
             <div className="mt-1 flex items-center gap-3">
               <input
                 type="range"
                 min={0}
                 max={100}
-                value={s.weight}
-                onChange={(e) => onChangeWeight(i, Number(e.target.value))}
-                className={`h-2 flex-1 cursor-pointer appearance-none rounded-full ${THUMB_SHAPE_CLASSES} ${THUMB_COLOR_CLASSES[i % THUMB_COLOR_CLASSES.length]}`}
-                style={{ background: trackBackground(colorFor(i), s.weight) }}
+                value={segment.weight}
+                onChange={(e) => onChangeWeight(index, Number(e.target.value))}
+                className={`h-2 flex-1 cursor-pointer appearance-none rounded-full ${THUMB_SHAPE_CLASSES} ${THUMB_COLOR_CLASSES[index % THUMB_COLOR_CLASSES.length]}`}
+                style={{ background: trackBackground(colorFor(index), segment.weight) }}
               />
               <div className="flex items-center gap-1">
                 <input
                   type="number"
                   min={0}
                   max={100}
-                  value={s.weight}
-                  onChange={(e) => onChangeWeight(i, Number(e.target.value))}
+                  value={segment.weight}
+                  onChange={(e) => onChangeWeight(index, Number(e.target.value))}
                   className="w-16 rounded-md border border-slate-300 px-2 py-1 text-sm tabular-nums"
                 />
                 <span className="text-sm text-slate-500">%</span>
