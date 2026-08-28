@@ -68,7 +68,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     where: { projectId_key: { projectId, key: config.key } },
   });
   if (existing) {
-    return NextResponse.json({ errors: [`an experiment with key "${config.key}" already exists`] }, { status: 409 });
+    return NextResponse.json({ errors: [`an experiment with key "${config.key}" already exists`] }, { status: HTTP_STATUS.CONFLICT });
   }
 
   try {
@@ -88,7 +88,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   } catch (err: unknown) {
     const isUniqueConstraintError = typeof err === 'object' && err !== null && 'code' in err && err.code === 'P2002';
     if (isUniqueConstraintError) {
-      return NextResponse.json({ errors: [`an experiment with key "${config.key}" already exists`] }, { status: 409 });
+      return NextResponse.json({ errors: [`an experiment with key "${config.key}" already exists`] }, { status: HTTP_STATUS.CONFLICT });
     }
     throw err;
   }
