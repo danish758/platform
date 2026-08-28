@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { TagInput } from './TagInput';
 import { VariantAllocationSliders } from './VariantAllocationSliders';
+import { useApiRequest } from '@/hooks/useApiRequest';
 import { OPERATOR_LABELS, OPERATORS_BY_TYPE, type ContextKeyType } from '@/lib/targeting-labels';
 import { equalSplit, rebalanceProportional } from '@/lib/variant-weights';
 
@@ -63,8 +64,7 @@ export function ExperimentWizard({
 }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
-  const [serverErrors, setServerErrors] = useState<string[]>([]);
+  const { run, pending, errors: serverErrors } = useApiRequest();
 
   const {
     name: initialName = '',
@@ -125,9 +125,6 @@ export function ExperimentWizard({
   const liveErrors = validateConfig(clientConfig);
 
   async function handleSubmit() {
-    setSubmitting(true);
-    setServerErrors([]);
-
     const payload = {
       key,
       name,
@@ -149,18 +146,12 @@ export function ExperimentWizard({
     const url = mode === 'create'
       ? `/api/projects/${projectId}/experiments`
       : `/api/projects/${projectId}/experiments/${initialKey}`;
-    const res = await fetch(url, {
-      method: mode === 'create' ? 'POST' : 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      setServerErrors(body.errors ?? [body.error ?? 'Something went wrong']);
-      setSubmitting(false);
-      return;
-    }
+    const body = await run(
+      url,
+      { method: mode === 'create' ? 'POST' : 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) },
+      'Something went wrong'
+    );
+    if (!body) return;
 
     router.push(`/projects/${projectId}`);
     router.refresh();
@@ -485,10 +476,10 @@ export function ExperimentWizard({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={submitting || liveErrors.length > 0}
+            disabled={pending || liveErrors.length > 0}
             className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-30"
           >
-            {submitting ? 'Saving…' : mode === 'create' ? 'Create experiment' : 'Save changes'}
+            {pending ? 'Saving…' : mode === 'create' ? 'Create experiment' : 'Save changes'}
           </button>
         )}
       </div>

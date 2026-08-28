@@ -1,25 +1,19 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useApiRequest } from '@/hooks/useApiRequest';
 
 export function LogoutButton() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const { run, error } = useApiRequest();
 
   return (
     <div className="flex flex-col items-end gap-1">
       <button
         type="button"
         onClick={async () => {
-          setError(null);
-          const res = await fetch('/api/auth/logout', { method: 'POST' });
-          if (!res.ok) {
-            const body = await res.json().catch(() => ({}));
-            const { errors = [], error: errorMessage } = body;
-            setError(errors[0] ?? errorMessage ?? 'Failed to log out');
-            return;
-          }
+          const body = await run('/api/auth/logout', { method: 'POST' }, 'Failed to log out');
+          if (!body) return;
           router.push('/login');
           router.refresh();
         }}

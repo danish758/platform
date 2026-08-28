@@ -2,36 +2,26 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useApiRequest } from '@/hooks/useApiRequest';
 
 export function CreateApiKeyForm({ projectId }: { projectId: string }) {
   const router = useRouter();
   const [label, setLabel] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [createdKey, setCreatedKey] = useState<string | null>(null);
+  const { run, pending, error } = useApiRequest();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    setError(null);
 
-    const res = await fetch(`/api/projects/${projectId}/api-keys`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ label }),
-    });
+    const body = await run<{ key: string }>(
+      `/api/projects/${projectId}/api-keys`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ label }) },
+      'Failed to create API key'
+    );
+    if (!body) return;
 
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      setError(body.error ?? 'Failed to create API key');
-      setSubmitting(false);
-      return;
-    }
-
-    const body = (await res.json()) as { key: string };
     setCreatedKey(body.key);
     setLabel('');
-    setSubmitting(false);
     router.refresh();
   }
 
@@ -66,10 +56,10 @@ export function CreateApiKeyForm({ projectId }: { projectId: string }) {
       </div>
       <button
         type="submit"
-        disabled={submitting}
+        disabled={pending}
         className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
       >
-        {submitting ? 'Creating…' : 'New API key'}
+        {pending ? 'Creating…' : 'New API key'}
       </button>
       {error && <p className="text-sm text-rose-600">{error}</p>}
     </form>

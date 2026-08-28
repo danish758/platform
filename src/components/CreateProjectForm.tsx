@@ -2,33 +2,24 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useApiRequest } from '@/hooks/useApiRequest';
 
 export function CreateProjectForm() {
   const router = useRouter();
   const [name, setName] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { run, pending, error } = useApiRequest();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    setError(null);
 
-    const res = await fetch('/api/projects', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
-    });
-
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      setError(body.error ?? 'Failed to create project');
-      setSubmitting(false);
-      return;
-    }
+    const body = await run(
+      '/api/projects',
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) },
+      'Failed to create project'
+    );
+    if (!body) return;
 
     setName('');
-    setSubmitting(false);
     router.refresh();
   }
 
@@ -46,10 +37,10 @@ export function CreateProjectForm() {
       </div>
       <button
         type="submit"
-        disabled={submitting}
+        disabled={pending}
         className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
       >
-        {submitting ? 'Creating…' : 'Create project'}
+        {pending ? 'Creating…' : 'Create project'}
       </button>
       {error && <p className="text-sm text-rose-600">{error}</p>}
     </form>
