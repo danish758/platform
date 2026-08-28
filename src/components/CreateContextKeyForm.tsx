@@ -2,37 +2,28 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useApiRequest } from '@/hooks/useApiRequest';
 
 export function CreateContextKeyForm({ projectId }: { projectId: string }) {
   const router = useRouter();
   const [key, setKey] = useState('');
   const [label, setLabel] = useState('');
   const [type, setType] = useState<'string' | 'number'>('string');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { run, pending, error } = useApiRequest();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
-    setError(null);
 
-    const res = await fetch(`/api/projects/${projectId}/context-keys`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, label, type }),
-    });
-
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      setError(body.errors?.[0] ?? body.error ?? 'Failed to create context key');
-      setSubmitting(false);
-      return;
-    }
+    const body = await run(
+      `/api/projects/${projectId}/context-keys`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, label, type }) },
+      'Failed to create context key'
+    );
+    if (!body) return;
 
     setKey('');
     setLabel('');
     setType('string');
-    setSubmitting(false);
     router.refresh();
   }
 
@@ -69,10 +60,10 @@ export function CreateContextKeyForm({ projectId }: { projectId: string }) {
       </div>
       <button
         type="submit"
-        disabled={submitting || !key}
+        disabled={pending || !key}
         className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
       >
-        {submitting ? 'Creating…' : 'New context key'}
+        {pending ? 'Creating…' : 'New context key'}
       </button>
       {error && <p className="text-sm text-rose-600">{error}</p>}
     </form>

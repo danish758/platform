@@ -1,23 +1,24 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { HTTP_STATUS } from '@/lib/http-status';
 import { verifyPassword } from '@/lib/password';
 import { createSession, SESSION_COOKIE } from '@/lib/session';
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
   const body = (await request.json().catch(() => null)) as { email?: string; password?: string } | null;
-  const email = body?.email?.trim().toLowerCase();
-  const password = body?.password;
+  const { email: rawEmail = '', password } = body || {};
+  const email = rawEmail.trim().toLowerCase();
 
   if (!email || !password) {
-    return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+    return NextResponse.json({ error: 'Email and password are required' }, { status: HTTP_STATUS.BAD_REQUEST });
   }
 
   const account = await prisma.account.findUnique({ where: { email } });
   // Same error for "no such account" and "wrong password" — don't leak
   // which one it was.
   if (!account || !(await verifyPassword(password, account.passwordHash))) {
-    return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+    return NextResponse.json({ error: 'Invalid email or password' }, { status: HTTP_STATUS.UNAUTHORIZED });
   }
 
   const session = await createSession(account.id);

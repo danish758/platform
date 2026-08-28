@@ -4,6 +4,7 @@ import { getCurrentAccount, requireOwnedProject } from '@/lib/authz';
 import { prisma } from '@/lib/db';
 import { parseVariantsWithLabels, toConfig, type VariantWithLabel } from '@/lib/experiment-repo';
 import { validateExperimentInput } from '@/lib/experiment-input';
+import { HTTP_STATUS } from '@/lib/http-status';
 
 type Params = { params: Promise<{ id: string; key: string }> };
 
@@ -17,34 +18,35 @@ type PatchBody = {
   conversionEvent?: string;
 };
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(_request: Request, { params }: Params): Promise<NextResponse> {
   const account = await getCurrentAccount();
-  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
 
   const { id: projectId, key } = await params;
   const project = await requireOwnedProject(account.id, projectId);
-  if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+  if (!project) return NextResponse.json({ error: 'Project not found' }, { status: HTTP_STATUS.NOT_FOUND });
 
   const row = await prisma.experiment.findUnique({ where: { projectId_key: { projectId, key } } });
-  if (!row) return NextResponse.json({ error: 'Experiment not found' }, { status: 404 });
+  if (!row) return NextResponse.json({ error: 'Experiment not found' }, { status: HTTP_STATUS.NOT_FOUND });
 
   return NextResponse.json({ experiment: row });
 }
 
-export async function PATCH(request: Request, { params }: Params) {
+export async function PATCH(request: Request, { params }: Params): Promise<NextResponse> {
   const account = await getCurrentAccount();
-  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
 
   const { id: projectId, key } = await params;
   const project = await requireOwnedProject(account.id, projectId);
-  if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+  if (!project) return NextResponse.json({ error: 'Project not found' }, { status: HTTP_STATUS.NOT_FOUND });
 
   const existingRow = await prisma.experiment.findUnique({ where: { projectId_key: { projectId, key } } });
-  if (!existingRow) return NextResponse.json({ error: 'Experiment not found' }, { status: 404 });
+  if (!existingRow) return NextResponse.json({ error: 'Experiment not found' }, { status: HTTP_STATUS.NOT_FOUND });
 
   const body = (await request.json().catch(() => null)) as PatchBody | null;
-  if (!body) return NextResponse.json({ errors: ['request body must be valid JSON'] }, { status: 400 });
+  if (!body) return NextResponse.json({ errors: ['request body must be valid JSON'] }, { status: HTTP_STATUS.BAD_REQUEST });
 
+  const { name: rawName = '' } = body;
   const existingConfig = toConfig(existingRow);
   // Same missing-vs-empty distinction as targeting: a genuinely absent
   // `variants` key means "leave them (and their labels) unchanged," so this
@@ -54,20 +56,20 @@ export async function PATCH(request: Request, { params }: Params) {
   const mergedConfig: ExperimentConfig = {
     key,
     status: body.status ?? existingConfig.status,
-    variants: mergedVariants.map((v) => ({ key: v.key, weight: v.weight })),
+    variants: mergedVariants.map((variant) => ({ key: variant.key, weight: variant.weight })),
     targeting: body.targeting !== undefined ? body.targeting : existingConfig.targeting,
     seed: body.seed !== undefined ? body.seed : existingConfig.seed,
   };
 
   const errors = await validateExperimentInput(projectId, mergedConfig);
   if (errors.length > 0) {
-    return NextResponse.json({ errors }, { status: 400 });
+    return NextResponse.json({ errors }, { status: HTTP_STATUS.BAD_REQUEST });
   }
 
   const row = await prisma.experiment.update({
     where: { projectId_key: { projectId, key } },
     data: {
-      name: body.name?.trim() || existingRow.name,
+      name: rawName.trim() || existingRow.name,
       description: body.description !== undefined ? body.description.trim() || null : existingRow.description,
       conversionEvent:
         body.conversionEvent !== undefined ? body.conversionEvent.trim() || null : existingRow.conversionEvent,
@@ -81,19 +83,19 @@ export async function PATCH(request: Request, { params }: Params) {
   return NextResponse.json({ experiment: row });
 }
 
-export async function DELETE(_request: Request, { params }: Params) {
+export async function DELETE(_request: Request, { params }: Params): Promise<NextResponse> {
   const account = await getCurrentAccount();
-  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
 
   const { id: projectId, key } = await params;
   const project = await requireOwnedProject(account.id, projectId);
-  if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+  if (!project) return NextResponse.json({ error: 'Project not found' }, { status: HTTP_STATUS.NOT_FOUND });
 
   // No cascade — Exposure/Conversion rows for this key are historical fact
   // and are left intact (they have no FK relation to Experiment, just
   // matching string columns; see schema.prisma).
   const result = await prisma.experiment.deleteMany({ where: { projectId, key } });
-  if (result.count === 0) return NextResponse.json({ error: 'Experiment not found' }, { status: 404 });
+  if (result.count === 0) return NextResponse.json({ error: 'Experiment not found' }, { status: HTTP_STATUS.NOT_FOUND });
 
   return NextResponse.json({ ok: true });
 }

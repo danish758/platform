@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireApiKeyProject } from '@/lib/api-key';
 import { prisma } from '@/lib/db';
+import { HTTP_STATUS } from '@/lib/http-status';
 
 type ExposureEvent = { userId: string; experimentKey: string; variantKey: string };
 type ConversionEvent = { userId: string; eventName: string; value?: number };
@@ -37,27 +38,26 @@ async function logExposure(projectId: string, event: ExposureEvent): Promise<voi
 // (see CroEngineClient.flush() in @cro-engine/sdk) — a consuming app's page
 // render never blocks on this, and this route never blocks on more than one
 // round trip regardless of how many events were queued.
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
   const projectId = await requireApiKeyProject(request);
-  if (!projectId) return NextResponse.json({ error: 'Invalid or missing API key' }, { status: 401 });
+  if (!projectId) return NextResponse.json({ error: 'Invalid or missing API key' }, { status: HTTP_STATUS.UNAUTHORIZED });
 
   const body = (await request.json().catch(() => null)) as {
     exposures?: ExposureEvent[];
     conversions?: ConversionEvent[];
   } | null;
 
-  const exposures = body?.exposures ?? [];
-  const conversions = body?.conversions ?? [];
+  const { exposures = [], conversions = [] } = body || {};
 
-  await Promise.all(exposures.map((e) => logExposure(projectId, e)));
+  await Promise.all(exposures.map((exposure) => logExposure(projectId, exposure)));
 
   if (conversions.length > 0) {
     await prisma.conversion.createMany({
-      data: conversions.map((c) => ({
+      data: conversions.map((conversion) => ({
         projectId,
-        userId: c.userId,
-        eventName: c.eventName,
-        value: c.value ?? null,
+        userId: conversion.userId,
+        eventName: conversion.eventName,
+        value: conversion.value ?? null,
       })),
     });
   }

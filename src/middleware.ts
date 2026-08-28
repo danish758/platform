@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { HTTP_STATUS } from '@/lib/http-status';
 import { getAccountBySessionId, SESSION_COOKIE } from '@/lib/session';
 
 // Node.js runtime middleware (stable since Next.js 15.5) — this is purely a
@@ -17,8 +18,8 @@ export const config = {
   matcher: ['/', '/projects/:path*', '/api/projects/:path*'],
 };
 
-export async function middleware(request: NextRequest) {
-  const sessionId = request.cookies.get(SESSION_COOKIE)?.value;
+export async function middleware(request: NextRequest): Promise<NextResponse> {
+  const { value: sessionId } = request.cookies.get(SESSION_COOKIE) || {};
   const account = await getAccountBySessionId(sessionId);
 
   if (request.nextUrl.pathname === '/') {
@@ -31,7 +32,7 @@ export async function middleware(request: NextRequest) {
     // silently receive the /login page's HTML with a 200 status instead of
     // an error it can actually detect.
     if (request.nextUrl.pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
     }
     return NextResponse.redirect(new URL('/login', request.url));
   }

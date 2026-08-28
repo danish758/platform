@@ -35,7 +35,7 @@ async function getVariantStats(row: ExperimentRow): Promise<VariantStats[]> {
             select: { userId: true },
             distinct: ['userId'],
           })
-        ).map((c) => c.userId)
+        ).map((conversion) => conversion.userId)
       )
     : new Set<string>();
 
@@ -65,16 +65,16 @@ export async function analyzeExperimentRow(row: ExperimentRow): Promise<Experime
   // The baseline is whichever variant is listed first in the experiment's
   // own config, not a hardcoded "control" key — admins can name variants
   // anything, unlike v1's two fixed demo experiments.
-  const baselineKey = config.variants[0]?.key;
+  const { key: baselineKey } = config.variants[0] || {};
   if (!baselineKey) return null;
 
   const variantStats = await getVariantStats(row);
-  const control = variantStats.find((v) => v.variantKey === baselineKey);
+  const control = variantStats.find((variantStat) => variantStat.variantKey === baselineKey);
   if (!control) return null;
 
-  const others = variantStats.filter((v) => v.variantKey !== baselineKey);
+  const others = variantStats.filter((variantStat) => variantStat.variantKey !== baselineKey);
   const results = analyzeExperiment(control, others);
-  const statsByVariant = Object.fromEntries(variantStats.map((v) => [v.variantKey, v]));
+  const statsByVariant = Object.fromEntries(variantStats.map((variantStat) => [variantStat.variantKey, variantStat]));
 
   return { results, statsByVariant };
 }

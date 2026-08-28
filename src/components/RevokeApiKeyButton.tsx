@@ -1,24 +1,27 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useApiRequest } from '@/hooks/useApiRequest';
 
 export function RevokeApiKeyButton({ projectId, keyId }: { projectId: string; keyId: string }) {
   const router = useRouter();
-  const [revoking, setRevoking] = useState(false);
+  const { run, pending, error } = useApiRequest();
 
   return (
-    <button
-      type="button"
-      disabled={revoking}
-      onClick={async () => {
-        setRevoking(true);
-        await fetch(`/api/projects/${projectId}/api-keys/${keyId}`, { method: 'DELETE' });
-        router.refresh();
-      }}
-      className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-60"
-    >
-      {revoking ? 'Revoking…' : 'Revoke'}
-    </button>
+    <div className="flex flex-col items-end gap-1">
+      <button
+        type="button"
+        disabled={pending}
+        onClick={async () => {
+          const body = await run(`/api/projects/${projectId}/api-keys/${keyId}`, { method: 'DELETE' }, 'Failed to revoke API key');
+          if (!body) return;
+          router.refresh();
+        }}
+        className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-60"
+      >
+        {pending ? 'Revoking…' : 'Revoke'}
+      </button>
+      {error && <p className="max-w-xs text-right text-xs text-rose-600">{error}</p>}
+    </div>
   );
 }

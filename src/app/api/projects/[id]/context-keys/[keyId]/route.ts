@@ -2,20 +2,21 @@ import type { TargetingRule } from '@cro-engine/assignment-engine';
 import { NextResponse } from 'next/server';
 import { getCurrentAccount, requireOwnedProject } from '@/lib/authz';
 import { prisma } from '@/lib/db';
+import { HTTP_STATUS } from '@/lib/http-status';
 
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string; keyId: string }> }
-) {
+): Promise<NextResponse> {
   const account = await getCurrentAccount();
-  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
 
   const { id: projectId, keyId } = await params;
   const project = await requireOwnedProject(account.id, projectId);
-  if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+  if (!project) return NextResponse.json({ error: 'Project not found' }, { status: HTTP_STATUS.NOT_FOUND });
 
   const contextKey = await prisma.contextKey.findFirst({ where: { id: keyId, projectId } });
-  if (!contextKey) return NextResponse.json({ error: 'Context key not found' }, { status: 404 });
+  if (!contextKey) return NextResponse.json({ error: 'Context key not found' }, { status: HTTP_STATUS.NOT_FOUND });
 
   // No join table between targeting rules and context keys — targeting is
   // stored as an opaque JSON blob per experiment (see schema.prisma), so
@@ -38,7 +39,7 @@ export async function DELETE(
   if (referencedBy.length > 0) {
     return NextResponse.json(
       { errors: [`"${contextKey.key}" is used by targeting rules on: ${referencedBy.join(', ')}`] },
-      { status: 409 }
+      { status: HTTP_STATUS.CONFLICT }
     );
   }
 

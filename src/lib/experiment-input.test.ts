@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { ExperimentConfig } from '@cro-engine/assignment-engine';
-import { setupTestDatabase, TEST_DATABASE_URL } from './setup.js';
+import { setupTestDatabase, TEST_DATABASE_URL } from '@/test/setup';
 
 // validateExperimentInput is imported dynamically, inside beforeAll, AFTER
 // DATABASE_URL is overridden below — not as a static top-level import.
@@ -10,23 +10,24 @@ import { setupTestDatabase, TEST_DATABASE_URL } from './setup.js';
 // at that instant. A static import here would resolve before this file's
 // beforeAll ever runs, permanently binding it to the real dev database
 // instead of this throwaway test one — exactly the mistake that let earlier
-// test runs write real rows into `cro_engine`. See exposure-dedup.test.ts
-// for the same dynamic-import discipline, established for the same reason.
-let validateExperimentInput: typeof import('@/lib/experiment-input')['validateExperimentInput'];
+// test runs write real rows into `cro_engine`. See route.test.ts (in
+// app/api/v1/events) for the same dynamic-import discipline, established for
+// the same reason.
+let validateExperimentInput: typeof import('./experiment-input')['validateExperimentInput'];
 
 beforeAll(async () => {
   process.env.DATABASE_URL = TEST_DATABASE_URL;
   setupTestDatabase();
-  ({ validateExperimentInput } = await import('@/lib/experiment-input'));
+  ({ validateExperimentInput } = await import('./experiment-input'));
 }, 30_000);
 
 afterAll(async () => {
-  const { prisma } = await import('@/lib/db');
+  const { prisma } = await import('./db');
   await prisma.$disconnect();
 });
 
 async function seedProjectWithContextKeys() {
-  const { prisma } = await import('@/lib/db');
+  const { prisma } = await import('./db');
 
   const account = await prisma.account.create({
     data: { email: `experiment-input-${crypto.randomUUID()}@example.com`, passwordHash: 'x' },

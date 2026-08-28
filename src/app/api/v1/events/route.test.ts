@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { setupTestDatabase, TEST_DATABASE_URL } from './setup.js';
+import { setupTestDatabase, TEST_DATABASE_URL } from '@/test/setup';
 
 beforeAll(() => {
   process.env.DATABASE_URL = TEST_DATABASE_URL;
@@ -35,7 +35,7 @@ afterAll(async () => {
 
 describe('POST /api/v1/events — exposure deduplication', () => {
   it('inserting the same (projectId, userId, experimentKey) twice yields exactly one row', async () => {
-    const { POST } = await import('@/app/api/v1/events/route');
+    const { POST } = await import('./route');
     const { prisma } = await import('@/lib/db');
     const { projectId, apiKey } = await seedProjectWithApiKey();
 
@@ -48,13 +48,13 @@ describe('POST /api/v1/events — exposure deduplication', () => {
   });
 
   it('rejects a request with an invalid API key', async () => {
-    const { POST } = await import('@/app/api/v1/events/route');
+    const { POST } = await import('./route');
     const response = await POST(eventsRequest('sk_not_a_real_key', { exposures: [] }));
     expect(response.status).toBe(401);
   });
 
   it('two different projects never see each other\'s exposures', async () => {
-    const { POST } = await import('@/app/api/v1/events/route');
+    const { POST } = await import('./route');
     const { prisma } = await import('@/lib/db');
     const projectA = await seedProjectWithApiKey();
     const projectB = await seedProjectWithApiKey();
@@ -72,7 +72,7 @@ describe('POST /api/v1/events — exposure deduplication', () => {
   });
 
   it('conversions are not deduplicated — a user can convert multiple times', async () => {
-    const { POST } = await import('@/app/api/v1/events/route');
+    const { POST } = await import('./route');
     const { prisma } = await import('@/lib/db');
     const { projectId, apiKey } = await seedProjectWithApiKey();
 

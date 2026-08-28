@@ -47,7 +47,7 @@ export default async function ProjectDashboardPage({ params }: { params: Promise
   if (!project) notFound();
 
   const experiments = await prisma.experiment.findMany({ where: { projectId }, orderBy: { key: 'asc' } });
-  const analyses = await Promise.all(experiments.map((e) => analyzeExperimentRow(e)));
+  const analyses = await Promise.all(experiments.map((experiment) => analyzeExperimentRow(experiment)));
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-16">
@@ -63,11 +63,12 @@ export default async function ProjectDashboardPage({ params }: { params: Promise
 
       <div className="mt-10 space-y-10">
         {experiments.length === 0 && <p className="text-sm text-slate-500">No experiments yet.</p>}
-        {experiments.map((experiment, i) => {
-          const analysis = analyses[i];
+        {experiments.map((experiment, index) => {
+          const analysis = analyses[index];
           const variants = parseVariantsWithLabels(experiment);
-          const baselineKey = variants[0]?.key as string | undefined;
-          const labelByKey = Object.fromEntries(variants.map((v) => [v.key, v.label || v.key]));
+          const { key: baselineKey } = variants[0] || {};
+          const labelByKey = Object.fromEntries(variants.map((variant) => [variant.key, variant.label || variant.key]));
+          const { results = null, statsByVariant = {} } = analysis || {};
           return (
             <ExperimentCard
               key={experiment.id}
@@ -77,8 +78,8 @@ export default async function ProjectDashboardPage({ params }: { params: Promise
               conversionEvent={experiment.conversionEvent}
               baselineKey={baselineKey}
               labelByKey={labelByKey}
-              results={analysis?.results ?? null}
-              statsByVariant={analysis?.statsByVariant ?? {}}
+              results={results}
+              statsByVariant={statsByVariant}
             />
           );
         })}
@@ -106,8 +107,8 @@ function ExperimentCard({
   results: SignificanceResult[] | null;
   statsByVariant: Record<string, VariantStats>;
 }) {
-  const baseline = results?.find((r) => r.variantKey === baselineKey) ?? null;
-  const maxRate = results ? Math.max(...results.map((r) => r.conversionRate), 0.0001) : 0.0001;
+  const baseline = (results || []).find((result) => result.variantKey === baselineKey) ?? null;
+  const maxRate = results ? Math.max(...results.map((result) => result.conversionRate), 0.0001) : 0.0001;
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -144,37 +145,40 @@ function ExperimentCard({
                 </tr>
               </thead>
               <tbody>
-                {results.map((r) => (
-                  <tr key={r.variantKey} className="border-b border-slate-100 last:border-0">
-                    <td className="py-3 pr-4 font-medium">
-                      {labelByKey[r.variantKey] ?? r.variantKey}
-                      {r.variantKey === baselineKey && (
-                        <span className="ml-1.5 text-xs text-slate-400">(baseline)</span>
-                      )}
-                    </td>
-                    <td className="py-3 pr-4 tabular-nums">{statsByVariant[r.variantKey]?.visitors ?? 0}</td>
-                    <td className="py-3 pr-4 tabular-nums">{statsByVariant[r.variantKey]?.conversions ?? 0}</td>
-                    <td className="py-3 pr-4 tabular-nums">{pct(r.conversionRate)}</td>
-                    <td className="py-3 pr-4 tabular-nums">
-                      {r.relativeLift === null ? '—' : `${r.relativeLift >= 0 ? '+' : ''}${(r.relativeLift * 100).toFixed(1)}%`}
-                    </td>
-                    <td className="py-3 pr-4 tabular-nums">{r.pValue === null ? '—' : r.pValue.toFixed(4)}</td>
-                    <td className="py-3">
-                      {r.pValue === null || !baseline ? (
-                        <span className="text-xs text-slate-400">baseline</span>
-                      ) : (
-                        <VerdictBadge result={r} baseline={baseline} />
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {results.map((result) => {
+                  const { visitors = 0, conversions = 0 } = statsByVariant[result.variantKey] || {};
+                  return (
+                    <tr key={result.variantKey} className="border-b border-slate-100 last:border-0">
+                      <td className="py-3 pr-4 font-medium">
+                        {labelByKey[result.variantKey] ?? result.variantKey}
+                        {result.variantKey === baselineKey && (
+                          <span className="ml-1.5 text-xs text-slate-400">(baseline)</span>
+                        )}
+                      </td>
+                      <td className="py-3 pr-4 tabular-nums">{visitors}</td>
+                      <td className="py-3 pr-4 tabular-nums">{conversions}</td>
+                      <td className="py-3 pr-4 tabular-nums">{pct(result.conversionRate)}</td>
+                      <td className="py-3 pr-4 tabular-nums">
+                        {result.relativeLift === null ? '—' : `${result.relativeLift >= 0 ? '+' : ''}${(result.relativeLift * 100).toFixed(1)}%`}
+                      </td>
+                      <td className="py-3 pr-4 tabular-nums">{result.pValue === null ? '—' : result.pValue.toFixed(4)}</td>
+                      <td className="py-3">
+                        {result.pValue === null || !baseline ? (
+                          <span className="text-xs text-slate-400">baseline</span>
+                        ) : (
+                          <VerdictBadge result={result} baseline={baseline} />
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           <div className="mt-6 space-y-2">
-            {results.map((r) => (
-              <BarRow key={r.variantKey} label={labelByKey[r.variantKey] ?? r.variantKey} rate={r.conversionRate} max={maxRate} />
+            {results.map((result) => (
+              <BarRow key={result.variantKey} label={labelByKey[result.variantKey] ?? result.variantKey} rate={result.conversionRate} max={maxRate} />
             ))}
           </div>
         </>
