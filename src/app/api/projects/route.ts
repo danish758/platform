@@ -3,7 +3,7 @@ import { getCurrentAccount } from '@/lib/authz';
 import { prisma } from '@/lib/db';
 import { HTTP_STATUS } from '@/lib/http-status';
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
   const account = await getCurrentAccount();
   if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
 

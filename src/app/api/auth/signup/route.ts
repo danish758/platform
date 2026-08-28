@@ -7,7 +7,7 @@ import { createSession, SESSION_COOKIE } from '@/lib/session';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
   const body = (await request.json().catch(() => null)) as { email?: string; password?: string } | null;
   const { email: rawEmail = '', password } = body || {};
   const email = rawEmail.trim().toLowerCase();

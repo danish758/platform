@@ -18,7 +18,7 @@ type PatchBody = {
   conversionEvent?: string;
 };
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(_request: Request, { params }: Params): Promise<NextResponse> {
   const account = await getCurrentAccount();
   if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
 
@@ -32,7 +32,7 @@ export async function GET(_request: Request, { params }: Params) {
   return NextResponse.json({ experiment: row });
 }
 
-export async function PATCH(request: Request, { params }: Params) {
+export async function PATCH(request: Request, { params }: Params): Promise<NextResponse> {
   const account = await getCurrentAccount();
   if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
 
@@ -83,7 +83,7 @@ export async function PATCH(request: Request, { params }: Params) {
   return NextResponse.json({ experiment: row });
 }
 
-export async function DELETE(_request: Request, { params }: Params) {
+export async function DELETE(_request: Request, { params }: Params): Promise<NextResponse> {
   const account = await getCurrentAccount();
   if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
 

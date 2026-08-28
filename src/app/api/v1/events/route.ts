@@ -38,7 +38,7 @@ async function logExposure(projectId: string, event: ExposureEvent): Promise<voi
 // (see CroEngineClient.flush() in @cro-engine/sdk) — a consuming app's page
 // render never blocks on this, and this route never blocks on more than one
 // round trip regardless of how many events were queued.
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
   const projectId = await requireApiKeyProject(request);
   if (!projectId) return NextResponse.json({ error: 'Invalid or missing API key' }, { status: HTTP_STATUS.UNAUTHORIZED });
 

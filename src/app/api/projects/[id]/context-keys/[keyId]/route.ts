@@ -7,7 +7,7 @@ import { HTTP_STATUS } from '@/lib/http-status';
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string; keyId: string }> }
-) {
+): Promise<NextResponse> {
   const account = await getCurrentAccount();
   if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
 

@@ -7,7 +7,7 @@ import { HTTP_STATUS } from '@/lib/http-status';
 // this (with its own local TTL cache — see @cro-engine/sdk), then evaluates
 // bucketing LOCALLY via assign() from @cro-engine/assignment-engine. This
 // route never computes anyone's bucket, it only returns config.
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse> {
   const projectId = await requireApiKeyProject(request);
   if (!projectId) return NextResponse.json({ error: 'Invalid or missing API key' }, { status: HTTP_STATUS.UNAUTHORIZED });
 

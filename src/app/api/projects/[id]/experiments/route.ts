@@ -18,7 +18,7 @@ type CreateBody = {
   targeting?: ExperimentConfig['targeting'];
 };
 
-export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   const account = await getCurrentAccount();
   if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
 

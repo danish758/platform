@@ -1,3 +1,4 @@
+import type { Project } from '@prisma/client';
 import { cookies } from 'next/headers';
 import { prisma } from './db';
 import { getAccountBySessionId, SESSION_COOKIE } from './session';
@@ -19,6 +20,6 @@ export async function getCurrentAccount(): Promise<{ id: string; email: string }
  * on it, it must also belong to the requesting account. Every project-scoped
  * route should route through this rather than a bare `findUnique(id)`.
  */
-export async function requireOwnedProject(accountId: string, projectId: string) {
+export async function requireOwnedProject(accountId: string, projectId: string): Promise<Project | null> {
   return prisma.project.findFirst({ where: { id: projectId, accountId } });
 }

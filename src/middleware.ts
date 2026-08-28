@@ -18,7 +18,7 @@ export const config = {
   matcher: ['/', '/projects/:path*', '/api/projects/:path*'],
 };
 
-export async function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { value: sessionId } = request.cookies.get(SESSION_COOKIE) || {};
   const account = await getAccountBySessionId(sessionId);
 

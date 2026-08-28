@@ -4,6 +4,13 @@ import { useState } from 'react';
 
 type ApiErrorBody = { errors?: string[]; error?: string };
 
+type UseApiRequestResult = {
+  run: <T = unknown>(input: RequestInfo, init: RequestInit, fallbackError: string) => Promise<T | null>;
+  pending: boolean;
+  errors: string[];
+  error: string | null;
+};
+
 /**
  * Shared fetch-and-surface-errors shape for every admin mutation (create,
  * delete, revoke, rerandomize, logout): call `run`, get back the parsed JSON
@@ -12,7 +19,7 @@ type ApiErrorBody = { errors?: string[]; error?: string };
  * means every caller checks `res.ok` and surfaces a message the same way,
  * instead of each component re-implementing (or forgetting to implement) it.
  */
-export function useApiRequest() {
+export function useApiRequest(): UseApiRequestResult {
   const [pending, setPending] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
