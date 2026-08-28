@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { equalSplit, rebalanceProportional } from '@/lib/variant-weights';
+import { equalSplit, rebalanceProportional } from './variant-weights';
 
 describe('equalSplit', () => {
   it('splits evenly when it divides cleanly', () => {

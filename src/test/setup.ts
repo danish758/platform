@@ -17,7 +17,7 @@ export function setupTestDatabase(): void {
   );
 
   execSync('npx prisma db push --skip-generate --accept-data-loss', {
-    cwd: new URL('..', import.meta.url).pathname,
+    cwd: new URL('../..', import.meta.url).pathname,
     env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL },
     stdio: 'pipe',
   });
