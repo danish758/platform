@@ -2,14 +2,15 @@ import { NextResponse } from 'next/server';
 import { generateApiKey } from '@/lib/api-key';
 import { getCurrentAccount, requireOwnedProject } from '@/lib/authz';
 import { prisma } from '@/lib/db';
+import { HTTP_STATUS } from '@/lib/http-status';
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const account = await getCurrentAccount();
-  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
 
   const { id: projectId } = await params;
   const project = await requireOwnedProject(account.id, projectId);
-  if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+  if (!project) return NextResponse.json({ error: 'Project not found' }, { status: HTTP_STATUS.NOT_FOUND });
 
   const body = (await request.json().catch(() => ({}))) as { label?: string };
   const { raw, hashed } = generateApiKey();

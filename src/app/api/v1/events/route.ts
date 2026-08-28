@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireApiKeyProject } from '@/lib/api-key';
 import { prisma } from '@/lib/db';
+import { HTTP_STATUS } from '@/lib/http-status';
 
 type ExposureEvent = { userId: string; experimentKey: string; variantKey: string };
 type ConversionEvent = { userId: string; eventName: string; value?: number };
@@ -39,7 +40,7 @@ async function logExposure(projectId: string, event: ExposureEvent): Promise<voi
 // round trip regardless of how many events were queued.
 export async function POST(request: Request) {
   const projectId = await requireApiKeyProject(request);
-  if (!projectId) return NextResponse.json({ error: 'Invalid or missing API key' }, { status: 401 });
+  if (!projectId) return NextResponse.json({ error: 'Invalid or missing API key' }, { status: HTTP_STATUS.UNAUTHORIZED });
 
   const body = (await request.json().catch(() => null)) as {
     exposures?: ExposureEvent[];

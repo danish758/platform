@@ -4,6 +4,7 @@ import { getCurrentAccount, requireOwnedProject } from '@/lib/authz';
 import { prisma } from '@/lib/db';
 import type { VariantWithLabel } from '@/lib/experiment-repo';
 import { validateExperimentInput } from '@/lib/experiment-input';
+import { HTTP_STATUS } from '@/lib/http-status';
 
 const KEY_RE = /^[a-z0-9][a-z0-9-]*$/;
 
@@ -19,11 +20,11 @@ type CreateBody = {
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const account = await getCurrentAccount();
-  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: HTTP_STATUS.UNAUTHORIZED });
 
   const { id: projectId } = await params;
   const project = await requireOwnedProject(account.id, projectId);
-  if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+  if (!project) return NextResponse.json({ error: 'Project not found' }, { status: HTTP_STATUS.NOT_FOUND });
 
   const body = (await request.json().catch(() => null)) as CreateBody | null;
   const {
@@ -39,12 +40,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!key || !KEY_RE.test(key)) {
     return NextResponse.json(
       { errors: ['key must be lowercase letters, numbers, and hyphens only'] },
-      { status: 400 }
+      { status: HTTP_STATUS.BAD_REQUEST }
     );
   }
   const name = rawName.trim();
   if (!name) {
-    return NextResponse.json({ errors: ['name is required'] }, { status: 400 });
+    return NextResponse.json({ errors: ['name is required'] }, { status: HTTP_STATUS.BAD_REQUEST });
   }
 
   const config: ExperimentConfig = {
@@ -60,7 +61,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const errors = await validateExperimentInput(projectId, config);
   if (errors.length > 0) {
-    return NextResponse.json({ errors }, { status: 400 });
+    return NextResponse.json({ errors }, { status: HTTP_STATUS.BAD_REQUEST });
   }
 
   const existing = await prisma.experiment.findUnique({
