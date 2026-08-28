@@ -32,13 +32,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
   const body = (await request.json().catch(() => null)) as CreateBody | null;
-  if (!body?.key || !KEY_RE.test(body.key)) {
+  const { key, label = '', type } = body || {};
+  if (!key || !KEY_RE.test(key)) {
     return NextResponse.json(
       { errors: ['key must be lowercase letters, numbers, and underscores only'] },
       { status: 400 }
     );
   }
-  if (!body.type || !KNOWN_TYPES.has(body.type)) {
+  if (!type || !KNOWN_TYPES.has(type)) {
     return NextResponse.json({ errors: ['type must be "string" or "number"'] }, { status: 400 });
   }
 
@@ -46,16 +47,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const contextKey = await prisma.contextKey.create({
       data: {
         projectId,
-        key: body.key,
-        label: body.label?.trim() || null,
-        type: body.type,
+        key,
+        label: label.trim() || null,
+        type,
       },
     });
     return NextResponse.json({ contextKey });
   } catch (err: unknown) {
     const isUniqueConstraintError = typeof err === 'object' && err !== null && 'code' in err && err.code === 'P2002';
     if (isUniqueConstraintError) {
-      return NextResponse.json({ errors: [`a context key named "${body.key}" already exists`] }, { status: 409 });
+      return NextResponse.json({ errors: [`a context key named "${key}" already exists`] }, { status: 409 });
     }
     throw err;
   }

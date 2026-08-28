@@ -7,7 +7,8 @@ export async function POST(request: Request) {
   if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = (await request.json().catch(() => null)) as { name?: string } | null;
-  const name = body?.name?.trim();
+  const { name: rawName = '' } = body || {};
+  const name = rawName.trim();
   if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 });
 
   const project = await prisma.project.create({ data: { name, accountId: account.id } });

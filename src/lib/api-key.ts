@@ -36,8 +36,8 @@ export async function getProjectIdForApiKey(rawKey: string): Promise<string | nu
  * doesn't authenticate — callers should respond 401.
  */
 export async function requireApiKeyProject(request: Request): Promise<string | null> {
-  const auth = request.headers.get('authorization');
-  const rawKey = auth?.startsWith('Bearer ') ? auth.slice('Bearer '.length) : null;
+  const authHeader = request.headers.get('authorization') || '';
+  const rawKey = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : null;
   if (!rawKey) return null;
   return getProjectIdForApiKey(rawKey);
 }

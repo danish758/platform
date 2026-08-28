@@ -18,7 +18,7 @@ export const config = {
 };
 
 export async function middleware(request: NextRequest) {
-  const sessionId = request.cookies.get(SESSION_COOKIE)?.value;
+  const { value: sessionId } = request.cookies.get(SESSION_COOKIE) || {};
   const account = await getAccountBySessionId(sessionId);
 
   if (request.nextUrl.pathname === '/') {

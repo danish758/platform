@@ -66,8 +66,9 @@ export default async function ProjectDashboardPage({ params }: { params: Promise
         {experiments.map((experiment, i) => {
           const analysis = analyses[i];
           const variants = parseVariantsWithLabels(experiment);
-          const baselineKey = variants[0]?.key as string | undefined;
+          const { key: baselineKey } = variants[0] || {};
           const labelByKey = Object.fromEntries(variants.map((v) => [v.key, v.label || v.key]));
+          const { results = null, statsByVariant = {} } = analysis || {};
           return (
             <ExperimentCard
               key={experiment.id}
@@ -77,8 +78,8 @@ export default async function ProjectDashboardPage({ params }: { params: Promise
               conversionEvent={experiment.conversionEvent}
               baselineKey={baselineKey}
               labelByKey={labelByKey}
-              results={analysis?.results ?? null}
-              statsByVariant={analysis?.statsByVariant ?? {}}
+              results={results}
+              statsByVariant={statsByVariant}
             />
           );
         })}
@@ -106,7 +107,7 @@ function ExperimentCard({
   results: SignificanceResult[] | null;
   statsByVariant: Record<string, VariantStats>;
 }) {
-  const baseline = results?.find((r) => r.variantKey === baselineKey) ?? null;
+  const baseline = (results || []).find((r) => r.variantKey === baselineKey) ?? null;
   const maxRate = results ? Math.max(...results.map((r) => r.conversionRate), 0.0001) : 0.0001;
 
   return (
@@ -144,30 +145,33 @@ function ExperimentCard({
                 </tr>
               </thead>
               <tbody>
-                {results.map((r) => (
-                  <tr key={r.variantKey} className="border-b border-slate-100 last:border-0">
-                    <td className="py-3 pr-4 font-medium">
-                      {labelByKey[r.variantKey] ?? r.variantKey}
-                      {r.variantKey === baselineKey && (
-                        <span className="ml-1.5 text-xs text-slate-400">(baseline)</span>
-                      )}
-                    </td>
-                    <td className="py-3 pr-4 tabular-nums">{statsByVariant[r.variantKey]?.visitors ?? 0}</td>
-                    <td className="py-3 pr-4 tabular-nums">{statsByVariant[r.variantKey]?.conversions ?? 0}</td>
-                    <td className="py-3 pr-4 tabular-nums">{pct(r.conversionRate)}</td>
-                    <td className="py-3 pr-4 tabular-nums">
-                      {r.relativeLift === null ? '—' : `${r.relativeLift >= 0 ? '+' : ''}${(r.relativeLift * 100).toFixed(1)}%`}
-                    </td>
-                    <td className="py-3 pr-4 tabular-nums">{r.pValue === null ? '—' : r.pValue.toFixed(4)}</td>
-                    <td className="py-3">
-                      {r.pValue === null || !baseline ? (
-                        <span className="text-xs text-slate-400">baseline</span>
-                      ) : (
-                        <VerdictBadge result={r} baseline={baseline} />
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {results.map((r) => {
+                  const { visitors = 0, conversions = 0 } = statsByVariant[r.variantKey] || {};
+                  return (
+                    <tr key={r.variantKey} className="border-b border-slate-100 last:border-0">
+                      <td className="py-3 pr-4 font-medium">
+                        {labelByKey[r.variantKey] ?? r.variantKey}
+                        {r.variantKey === baselineKey && (
+                          <span className="ml-1.5 text-xs text-slate-400">(baseline)</span>
+                        )}
+                      </td>
+                      <td className="py-3 pr-4 tabular-nums">{visitors}</td>
+                      <td className="py-3 pr-4 tabular-nums">{conversions}</td>
+                      <td className="py-3 pr-4 tabular-nums">{pct(r.conversionRate)}</td>
+                      <td className="py-3 pr-4 tabular-nums">
+                        {r.relativeLift === null ? '—' : `${r.relativeLift >= 0 ? '+' : ''}${(r.relativeLift * 100).toFixed(1)}%`}
+                      </td>
+                      <td className="py-3 pr-4 tabular-nums">{r.pValue === null ? '—' : r.pValue.toFixed(4)}</td>
+                      <td className="py-3">
+                        {r.pValue === null || !baseline ? (
+                          <span className="text-xs text-slate-400">baseline</span>
+                        ) : (
+                          <VerdictBadge result={r} baseline={baseline} />
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

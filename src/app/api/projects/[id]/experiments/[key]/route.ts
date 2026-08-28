@@ -45,6 +45,7 @@ export async function PATCH(request: Request, { params }: Params) {
   const body = (await request.json().catch(() => null)) as PatchBody | null;
   if (!body) return NextResponse.json({ errors: ['request body must be valid JSON'] }, { status: 400 });
 
+  const { name: rawName = '' } = body;
   const existingConfig = toConfig(existingRow);
   // Same missing-vs-empty distinction as targeting: a genuinely absent
   // `variants` key means "leave them (and their labels) unchanged," so this
@@ -67,7 +68,7 @@ export async function PATCH(request: Request, { params }: Params) {
   const row = await prisma.experiment.update({
     where: { projectId_key: { projectId, key } },
     data: {
-      name: body.name?.trim() || existingRow.name,
+      name: rawName.trim() || existingRow.name,
       description: body.description !== undefined ? body.description.trim() || null : existingRow.description,
       conversionEvent:
         body.conversionEvent !== undefined ? body.conversionEvent.trim() || null : existingRow.conversionEvent,

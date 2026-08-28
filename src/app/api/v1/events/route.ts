@@ -46,8 +46,7 @@ export async function POST(request: Request) {
     conversions?: ConversionEvent[];
   } | null;
 
-  const exposures = body?.exposures ?? [];
-  const conversions = body?.conversions ?? [];
+  const { exposures = [], conversions = [] } = body || {};
 
   await Promise.all(exposures.map((e) => logExposure(projectId, e)));
 

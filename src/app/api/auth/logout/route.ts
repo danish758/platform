@@ -4,7 +4,7 @@ import { destroySession, SESSION_COOKIE } from '@/lib/session';
 
 export async function POST() {
   const cookieStore = await cookies();
-  const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
+  const { value: sessionId } = cookieStore.get(SESSION_COOKIE) || {};
   if (sessionId) await destroySession(sessionId);
   cookieStore.delete(SESSION_COOKIE);
   return NextResponse.json({ ok: true });

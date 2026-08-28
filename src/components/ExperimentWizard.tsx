@@ -66,18 +66,26 @@ export function ExperimentWizard({
   const [submitting, setSubmitting] = useState(false);
   const [serverErrors, setServerErrors] = useState<string[]>([]);
 
-  const [name, setName] = useState(initial?.name ?? '');
-  const [key, setKey] = useState(initial?.key ?? '');
-  const [keyEdited, setKeyEdited] = useState(mode === 'edit');
-  const [description, setDescription] = useState(initial?.description ?? '');
-  const [conversionEvent, setConversionEvent] = useState(initial?.conversionEvent ?? '');
-  const [status, setStatus] = useState<ExperimentConfig['status']>(initial?.status ?? 'draft');
-  const [variants, setVariants] = useState<VariantRow[]>(
-    initial?.variants ?? [
+  const {
+    name: initialName = '',
+    key: initialKey = '',
+    description: initialDescription = '',
+    conversionEvent: initialConversionEvent = '',
+    status: initialStatus = 'draft',
+    variants: initialVariants = [
       { id: newId(), key: 'control', keyEdited: true, weight: 50, label: 'Control' },
       { id: newId(), key: 'variant', keyEdited: true, weight: 50, label: 'Variant' },
-    ]
-  );
+    ],
+    targeting: initialTargeting = [],
+  } = initial || {};
+
+  const [name, setName] = useState(initialName);
+  const [key, setKey] = useState(initialKey);
+  const [keyEdited, setKeyEdited] = useState(mode === 'edit');
+  const [description, setDescription] = useState(initialDescription);
+  const [conversionEvent, setConversionEvent] = useState(initialConversionEvent);
+  const [status, setStatus] = useState<ExperimentConfig['status']>(initialStatus);
+  const [variants, setVariants] = useState<VariantRow[]>(initialVariants);
 
   function handleVariantLabelChange(i: number, label: string) {
     const next = [...variants];
@@ -90,12 +98,12 @@ export function ExperimentWizard({
     const nextWeights = rebalanceProportional(variants.map((v) => v.weight), i, newWeight);
     setVariants(variants.map((v, idx) => ({ ...v, weight: nextWeights[idx] })));
   }
-  const [targeting, setTargeting] = useState<TargetingRow[]>(initial?.targeting ?? []);
+  const [targeting, setTargeting] = useState<TargetingRow[]>(initialTargeting);
 
   const contextKeyByName = new Map(contextKeys.map((k) => [k.key, k]));
   function operatorsFor(attribute: string): TargetingOperator[] {
-    const type = (contextKeyByName.get(attribute)?.type as ContextKeyType | undefined) ?? 'string';
-    return OPERATORS_BY_TYPE[type];
+    const { type } = contextKeyByName.get(attribute) || {};
+    return OPERATORS_BY_TYPE[(type ?? 'string') as ContextKeyType];
   }
   function maxValuesFor(operator: TargetingOperator): number | undefined {
     return operator === 'in' || operator === 'notIn' ? undefined : 1;
@@ -140,7 +148,7 @@ export function ExperimentWizard({
 
     const url = mode === 'create'
       ? `/api/projects/${projectId}/experiments`
-      : `/api/projects/${projectId}/experiments/${initial!.key}`;
+      : `/api/projects/${projectId}/experiments/${initialKey}`;
     const res = await fetch(url, {
       method: mode === 'create' ? 'POST' : 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -313,7 +321,8 @@ export function ExperimentWizard({
             </p>
           )}
           {targeting.map((rule, i) => {
-            const keyType = (contextKeyByName.get(rule.attribute)?.type as ContextKeyType | undefined) ?? 'string';
+            const { type: ruleKeyType } = contextKeyByName.get(rule.attribute) || {};
+            const keyType = (ruleKeyType ?? 'string') as ContextKeyType;
             const allowedOperators = operatorsFor(rule.attribute);
             return (
               <div key={rule.id} className="flex items-end gap-2">
@@ -432,12 +441,15 @@ export function ExperimentWizard({
             <div>
               <div className="font-medium">Targeting</div>
               <ul className="mt-1 list-disc pl-5">
-                {targeting.map((r) => (
-                  <li key={r.id}>
-                    {contextKeyByName.get(r.attribute)?.label || r.attribute} {OPERATOR_LABELS[r.operator]}{' '}
-                    {r.value.join(', ')}
-                  </li>
-                ))}
+                {targeting.map((r) => {
+                  const { label } = contextKeyByName.get(r.attribute) || {};
+                  return (
+                    <li key={r.id}>
+                      {label || r.attribute} {OPERATOR_LABELS[r.operator]}{' '}
+                      {r.value.join(', ')}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}

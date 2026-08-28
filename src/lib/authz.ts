@@ -10,7 +10,7 @@ import { getAccountBySessionId, SESSION_COOKIE } from './session';
  * state, only on this server-side cookie lookup.
  */
 export async function getCurrentAccount(): Promise<{ id: string; email: string } | null> {
-  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
+  const { value: sessionId } = (await cookies()).get(SESSION_COOKIE) || {};
   return getAccountBySessionId(sessionId);
 }
 

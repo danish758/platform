@@ -24,7 +24,8 @@ export function CreateContextKeyForm({ projectId }: { projectId: string }) {
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setError(body.errors?.[0] ?? body.error ?? 'Failed to create context key');
+      const { errors = [], error: errorMessage } = body;
+      setError(errors[0] ?? errorMessage ?? 'Failed to create context key');
       setSubmitting(false);
       return;
     }

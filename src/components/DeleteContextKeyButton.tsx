@@ -20,7 +20,8 @@ export function DeleteContextKeyButton({ projectId, keyId, contextKey }: { proje
           const res = await fetch(`/api/projects/${projectId}/context-keys/${keyId}`, { method: 'DELETE' });
           if (!res.ok) {
             const body = await res.json().catch(() => ({}));
-            setError(body.errors?.[0] ?? body.error ?? 'Failed to delete context key');
+            const { errors = [], error: errorMessage } = body;
+            setError(errors[0] ?? errorMessage ?? 'Failed to delete context key');
             setBusy(false);
             return;
           }

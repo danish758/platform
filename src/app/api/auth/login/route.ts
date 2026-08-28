@@ -6,8 +6,8 @@ import { createSession, SESSION_COOKIE } from '@/lib/session';
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as { email?: string; password?: string } | null;
-  const email = body?.email?.trim().toLowerCase();
-  const password = body?.password;
+  const { email: rawEmail = '', password } = body || {};
+  const email = rawEmail.trim().toLowerCase();
 
   if (!email || !password) {
     return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });

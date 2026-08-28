@@ -65,7 +65,7 @@ export async function analyzeExperimentRow(row: ExperimentRow): Promise<Experime
   // The baseline is whichever variant is listed first in the experiment's
   // own config, not a hardcoded "control" key — admins can name variants
   // anything, unlike v1's two fixed demo experiments.
-  const baselineKey = config.variants[0]?.key;
+  const { key: baselineKey } = config.variants[0] || {};
   if (!baselineKey) return null;
 
   const variantStats = await getVariantStats(row);

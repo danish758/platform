@@ -26,26 +26,36 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 });
 
   const body = (await request.json().catch(() => null)) as CreateBody | null;
-  if (!body?.key || !KEY_RE.test(body.key)) {
+  const {
+    key,
+    name: rawName = '',
+    description: rawDescription = '',
+    conversionEvent: rawConversionEvent = '',
+    status = 'draft',
+    variants = [],
+    targeting,
+  } = body || {};
+
+  if (!key || !KEY_RE.test(key)) {
     return NextResponse.json(
       { errors: ['key must be lowercase letters, numbers, and hyphens only'] },
       { status: 400 }
     );
   }
-  if (!body.name?.trim()) {
+  const name = rawName.trim();
+  if (!name) {
     return NextResponse.json({ errors: ['name is required'] }, { status: 400 });
   }
 
-  const variants = body.variants ?? [];
   const config: ExperimentConfig = {
-    key: body.key,
-    status: body.status ?? 'draft',
+    key,
+    status,
     // Validation only needs the engine-facing shape — labels are stripped
     // here so validateConfig() (from @cro-engine/assignment-engine) sees
     // exactly the {key, weight} shape it expects; the label-bearing
     // `variants` array below is what actually gets persisted.
     variants: variants.map((v) => ({ key: v.key, weight: v.weight })),
-    targeting: body.targeting,
+    targeting,
   };
 
   const errors = await validateExperimentInput(projectId, config);
@@ -65,9 +75,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       data: {
         projectId,
         key: config.key,
-        name: body.name.trim(),
-        description: body.description?.trim() || null,
-        conversionEvent: body.conversionEvent?.trim() || null,
+        name,
+        description: rawDescription.trim() || null,
+        conversionEvent: rawConversionEvent.trim() || null,
         status: config.status,
         variantsJson: JSON.stringify(variants),
         targetingJson: config.targeting ? JSON.stringify(config.targeting) : null,
