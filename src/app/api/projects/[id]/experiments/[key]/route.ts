@@ -2,7 +2,7 @@ import type { ExperimentConfig } from '@cro-engine/assignment-engine';
 import { NextResponse } from 'next/server';
 import { getCurrentAccount, requireOwnedProject } from '@/lib/authz';
 import { prisma } from '@/lib/db';
-import { toConfig } from '@/lib/experiment-repo';
+import { parseVariantsWithLabels, toConfig, type VariantWithLabel } from '@/lib/experiment-repo';
 import { validateExperimentInput } from '@/lib/experiment-input';
 
 type Params = { params: Promise<{ id: string; key: string }> };
@@ -11,7 +11,7 @@ type PatchBody = {
   name?: string;
   description?: string;
   status?: ExperimentConfig['status'];
-  variants?: ExperimentConfig['variants'];
+  variants?: VariantWithLabel[];
   targeting?: ExperimentConfig['targeting'];
   seed?: number;
   conversionEvent?: string;
@@ -46,15 +46,20 @@ export async function PATCH(request: Request, { params }: Params) {
   if (!body) return NextResponse.json({ errors: ['request body must be valid JSON'] }, { status: 400 });
 
   const existingConfig = toConfig(existingRow);
+  // Same missing-vs-empty distinction as targeting: a genuinely absent
+  // `variants` key means "leave them (and their labels) unchanged," so this
+  // reads from the stored label-bearing array rather than existingConfig
+  // (which has already had labels stripped for the engine-facing shape).
+  const mergedVariants = body.variants ?? parseVariantsWithLabels(existingRow);
   const mergedConfig: ExperimentConfig = {
     key,
     status: body.status ?? existingConfig.status,
-    variants: body.variants ?? existingConfig.variants,
+    variants: mergedVariants.map((v) => ({ key: v.key, weight: v.weight })),
     targeting: body.targeting !== undefined ? body.targeting : existingConfig.targeting,
     seed: body.seed !== undefined ? body.seed : existingConfig.seed,
   };
 
-  const errors = validateExperimentInput(mergedConfig);
+  const errors = await validateExperimentInput(projectId, mergedConfig);
   if (errors.length > 0) {
     return NextResponse.json({ errors }, { status: 400 });
   }
@@ -67,7 +72,7 @@ export async function PATCH(request: Request, { params }: Params) {
       conversionEvent:
         body.conversionEvent !== undefined ? body.conversionEvent.trim() || null : existingRow.conversionEvent,
       status: mergedConfig.status,
-      variantsJson: JSON.stringify(mergedConfig.variants),
+      variantsJson: JSON.stringify(mergedVariants),
       targetingJson: mergedConfig.targeting ? JSON.stringify(mergedConfig.targeting) : null,
       seed: mergedConfig.seed ?? null,
     },

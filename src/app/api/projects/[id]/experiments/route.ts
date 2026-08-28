@@ -2,6 +2,7 @@ import type { ExperimentConfig } from '@cro-engine/assignment-engine';
 import { NextResponse } from 'next/server';
 import { getCurrentAccount, requireOwnedProject } from '@/lib/authz';
 import { prisma } from '@/lib/db';
+import type { VariantWithLabel } from '@/lib/experiment-repo';
 import { validateExperimentInput } from '@/lib/experiment-input';
 
 const KEY_RE = /^[a-z0-9][a-z0-9-]*$/;
@@ -12,7 +13,7 @@ type CreateBody = {
   description?: string;
   conversionEvent?: string;
   status?: ExperimentConfig['status'];
-  variants?: ExperimentConfig['variants'];
+  variants?: VariantWithLabel[];
   targeting?: ExperimentConfig['targeting'];
 };
 
@@ -35,14 +36,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ errors: ['name is required'] }, { status: 400 });
   }
 
+  const variants = body.variants ?? [];
   const config: ExperimentConfig = {
     key: body.key,
     status: body.status ?? 'draft',
-    variants: body.variants ?? [],
+    // Validation only needs the engine-facing shape — labels are stripped
+    // here so validateConfig() (from @cro-engine/assignment-engine) sees
+    // exactly the {key, weight} shape it expects; the label-bearing
+    // `variants` array below is what actually gets persisted.
+    variants: variants.map((v) => ({ key: v.key, weight: v.weight })),
     targeting: body.targeting,
   };
 
-  const errors = validateExperimentInput(config);
+  const errors = await validateExperimentInput(projectId, config);
   if (errors.length > 0) {
     return NextResponse.json({ errors }, { status: 400 });
   }
@@ -63,7 +69,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         description: body.description?.trim() || null,
         conversionEvent: body.conversionEvent?.trim() || null,
         status: config.status,
-        variantsJson: JSON.stringify(config.variants),
+        variantsJson: JSON.stringify(variants),
         targetingJson: config.targeting ? JSON.stringify(config.targeting) : null,
       },
     });

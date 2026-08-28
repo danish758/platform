@@ -41,6 +41,7 @@ model Project {
   account     Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
   apiKeys     ApiKey[]
   experiments Experiment[]
+  contextKeys ContextKey[]
   createdAt   DateTime     @default(now())
 
   @@index([accountId])
@@ -81,6 +82,26 @@ model Experiment {
   conversionEvent String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  @@unique([projectId, key])
+}
+
+// An admin-curated, explicit list of attribute names this project's SDK
+// integration is known to send (mirrors the consuming app's own
+// attribute-extractor registry — see acme-storefront's
+// request-attributes.ts — just made visible/manageable on the platform
+// side). Targeting rules created in the experiment wizard must reference
+// one of these; see targeting-validation.ts. Deliberately NOT
+// auto-discovered from traffic: an explicit, small, named list beats a
+// generic pass-through of whatever attributes a request happens to carry.
+model ContextKey {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  key       String
+  label     String?
+  type      String // 'string' | 'number' — validated in app code, matching how Experiment.status is a plain String, not a Postgres enum
+  createdAt DateTime @default(now())
 
   @@unique([projectId, key])
 }

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getCurrentAccount, requireOwnedProject } from '@/lib/authz';
 import { prisma } from '@/lib/db';
+import { parseVariantsWithLabels } from '@/lib/experiment-repo';
 import { analyzeExperimentRow } from '@/lib/stats';
 
 export const dynamic = 'force-dynamic';
@@ -64,7 +65,9 @@ export default async function ProjectDashboardPage({ params }: { params: Promise
         {experiments.length === 0 && <p className="text-sm text-slate-500">No experiments yet.</p>}
         {experiments.map((experiment, i) => {
           const analysis = analyses[i];
-          const baselineKey = JSON.parse(experiment.variantsJson)[0]?.key as string | undefined;
+          const variants = parseVariantsWithLabels(experiment);
+          const baselineKey = variants[0]?.key as string | undefined;
+          const labelByKey = Object.fromEntries(variants.map((v) => [v.key, v.label || v.key]));
           return (
             <ExperimentCard
               key={experiment.id}
@@ -73,6 +76,7 @@ export default async function ProjectDashboardPage({ params }: { params: Promise
               experimentKey={experiment.key}
               conversionEvent={experiment.conversionEvent}
               baselineKey={baselineKey}
+              labelByKey={labelByKey}
               results={analysis?.results ?? null}
               statsByVariant={analysis?.statsByVariant ?? {}}
             />
@@ -89,6 +93,7 @@ function ExperimentCard({
   status,
   conversionEvent,
   baselineKey,
+  labelByKey,
   results,
   statsByVariant,
 }: {
@@ -97,6 +102,7 @@ function ExperimentCard({
   status: string;
   conversionEvent: string | null;
   baselineKey: string | undefined;
+  labelByKey: Record<string, string>;
   results: SignificanceResult[] | null;
   statsByVariant: Record<string, VariantStats>;
 }) {
@@ -141,7 +147,7 @@ function ExperimentCard({
                 {results.map((r) => (
                   <tr key={r.variantKey} className="border-b border-slate-100 last:border-0">
                     <td className="py-3 pr-4 font-medium">
-                      {r.variantKey}
+                      {labelByKey[r.variantKey] ?? r.variantKey}
                       {r.variantKey === baselineKey && (
                         <span className="ml-1.5 text-xs text-slate-400">(baseline)</span>
                       )}
@@ -168,7 +174,7 @@ function ExperimentCard({
 
           <div className="mt-6 space-y-2">
             {results.map((r) => (
-              <BarRow key={r.variantKey} label={r.variantKey} rate={r.conversionRate} max={maxRate} />
+              <BarRow key={r.variantKey} label={labelByKey[r.variantKey] ?? r.variantKey} rate={r.conversionRate} max={maxRate} />
             ))}
           </div>
         </>

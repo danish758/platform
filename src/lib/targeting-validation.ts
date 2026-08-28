@@ -1,4 +1,6 @@
 import type { TargetingRule } from '@cro-engine/assignment-engine';
+import { prisma } from './db';
+import { OPERATORS_BY_TYPE, type ContextKeyType } from './targeting-labels';
 
 const KNOWN_OPERATORS = new Set(['eq', 'neq', 'in', 'notIn', 'gt', 'lt']);
 
@@ -10,15 +12,18 @@ const KNOWN_OPERATORS = new Set(['eq', 'neq', 'in', 'notIn', 'gt', 'lt']);
  * behavior for the engine, but wrong for an admin API accepting arbitrary
  * input: a typo should come back as a 400, not a silently-broken experiment.
  * This is the shape check the admin CRUD routes run in addition to
- * validateConfig().
- *
- * Matches the coercion rules the wizard's UI applies per operator: gt/lt
- * need a real number, in/notIn need a real non-empty array, eq/neq are
- * scoped to strings (the demo consumer app's attributes are all strings; see
- * DESIGN.md for why numeric eq/neq isn't offered by the admin form).
+ * validateConfig() — plus, beyond shape, that the attribute actually names
+ * a context key registered for this project (and that the operator is
+ * valid for that key's declared type). That second part needs a DB read,
+ * which is why this function is async where it previously wasn't.
  */
-export function validateTargeting(rules: TargetingRule[]): string[] {
+export async function validateTargeting(projectId: string, rules: TargetingRule[]): Promise<string[]> {
   const errors: string[] = [];
+
+  const contextKeys = rules.length > 0
+    ? await prisma.contextKey.findMany({ where: { projectId } })
+    : [];
+  const byKey = new Map(contextKeys.map((k) => [k.key, k]));
 
   for (const rule of rules) {
     if (!rule.attribute || rule.attribute.trim().length === 0) {
@@ -39,6 +44,16 @@ export function validateTargeting(rules: TargetingRule[]): string[] {
       }
     } else if (typeof rule.value !== 'string' || rule.value.trim().length === 0) {
       errors.push(`"${rule.attribute}" (${rule.operator}) needs a non-empty string value`);
+    }
+
+    const contextKey = byKey.get(rule.attribute);
+    if (!contextKey) {
+      errors.push(`"${rule.attribute}" is not a registered context key for this project`);
+      continue;
+    }
+    const allowedOperators = OPERATORS_BY_TYPE[contextKey.type as ContextKeyType];
+    if (!allowedOperators.includes(rule.operator)) {
+      errors.push(`operator "${rule.operator}" is not valid for "${rule.attribute}" (a ${contextKey.type} key)`);
     }
   }
 

@@ -3,12 +3,12 @@ import { DeleteExperimentButton } from '@/components/DeleteExperimentButton';
 import { ExperimentWizard, type ExperimentInitialData } from '@/components/ExperimentWizard';
 import { RerandomizeButton } from '@/components/RerandomizeButton';
 import { getCurrentAccount, requireOwnedProject } from '@/lib/authz';
-import { toConfig } from '@/lib/experiment-repo';
+import { parseVariantsWithLabels, toConfig } from '@/lib/experiment-repo';
 import { prisma } from '@/lib/db';
 
-function targetingValueToString(value: string | number | string[]): string {
-  if (Array.isArray(value)) return value.join(', ');
-  return String(value);
+function targetingValueToChips(value: string | number | string[]): string[] {
+  if (Array.isArray(value)) return value.map(String);
+  return [String(value)];
 }
 
 export default async function EditExperimentPage({
@@ -23,7 +23,10 @@ export default async function EditExperimentPage({
   const project = await requireOwnedProject(account.id, id);
   if (!project) notFound();
 
-  const row = await prisma.experiment.findUnique({ where: { projectId_key: { projectId: id, key } } });
+  const [row, contextKeys] = await Promise.all([
+    prisma.experiment.findUnique({ where: { projectId_key: { projectId: id, key } } }),
+    prisma.contextKey.findMany({ where: { projectId: id }, orderBy: { key: 'asc' } }),
+  ]);
   if (!row) notFound();
 
   const config = toConfig(row);
@@ -33,12 +36,18 @@ export default async function EditExperimentPage({
     description: row.description ?? '',
     conversionEvent: row.conversionEvent ?? '',
     status: config.status,
-    variants: config.variants.map((v) => ({ id: crypto.randomUUID(), key: v.key, weight: v.weight })),
+    variants: parseVariantsWithLabels(row).map((v) => ({
+      id: crypto.randomUUID(),
+      key: v.key,
+      keyEdited: true,
+      weight: v.weight,
+      label: v.label ?? '',
+    })),
     targeting: (config.targeting ?? []).map((r) => ({
       id: crypto.randomUUID(),
       attribute: r.attribute,
       operator: r.operator,
-      value: targetingValueToString(r.value),
+      value: targetingValueToChips(r.value),
     })),
   };
 
@@ -50,7 +59,7 @@ export default async function EditExperimentPage({
           <DeleteExperimentButton projectId={id} experimentKey={key} />
         </div>
       </div>
-      <ExperimentWizard projectId={id} mode="edit" initial={initial} />
+      <ExperimentWizard projectId={id} mode="edit" initial={initial} contextKeys={contextKeys} />
     </div>
   );
 }

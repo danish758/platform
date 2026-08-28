@@ -3,9 +3,14 @@
 import { validateConfig, type ExperimentConfig, type TargetingOperator } from '@cro-engine/assignment-engine';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { TagInput } from './TagInput';
+import { VariantAllocationSliders } from './VariantAllocationSliders';
+import { OPERATOR_LABELS, OPERATORS_BY_TYPE, type ContextKeyType } from '@/lib/targeting-labels';
+import { equalSplit, rebalanceProportional } from '@/lib/variant-weights';
 
-type VariantRow = { id: string; key: string; weight: number };
-type TargetingRow = { id: string; attribute: string; operator: TargetingOperator; value: string };
+type VariantRow = { id: string; key: string; keyEdited: boolean; weight: number; label: string };
+type TargetingRow = { id: string; attribute: string; operator: TargetingOperator; value: string[] };
+type ContextKeySummary = { id: string; key: string; label: string | null; type: string };
 
 export type ExperimentInitialData = {
   key: string;
@@ -29,21 +34,18 @@ function slugify(name: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-/** Coerces each targeting row's raw text value per its operator, matching
- * the shape the server's validateTargeting()/evaluateRule() expect —
- * gt/lt need a real number, in/notIn a real array, eq/neq a plain string. */
+/** Coerces each targeting row's chip values per its operator, matching the
+ * shape the server's validateTargeting()/evaluateRule() expect — gt/lt need
+ * a real number, in/notIn a real array, eq/neq a plain string. The
+ * TagInput's `max` prop already keeps eq/gt/lt down to exactly one chip. */
 function coerceTargetingRow(row: TargetingRow): { attribute: string; operator: TargetingOperator; value: string | number | string[] } {
   if (row.operator === 'gt' || row.operator === 'lt') {
-    return { attribute: row.attribute, operator: row.operator, value: Number(row.value) };
+    return { attribute: row.attribute, operator: row.operator, value: Number(row.value[0]) };
   }
   if (row.operator === 'in' || row.operator === 'notIn') {
-    return {
-      attribute: row.attribute,
-      operator: row.operator,
-      value: row.value.split(',').map((v) => v.trim()).filter(Boolean),
-    };
+    return { attribute: row.attribute, operator: row.operator, value: row.value };
   }
-  return { attribute: row.attribute, operator: row.operator, value: row.value };
+  return { attribute: row.attribute, operator: row.operator, value: row.value[0] ?? '' };
 }
 
 const STEPS = ['Basics', 'Variants', 'Targeting', 'Review'] as const;
@@ -52,10 +54,12 @@ export function ExperimentWizard({
   projectId,
   mode,
   initial,
+  contextKeys,
 }: {
   projectId: string;
   mode: 'create' | 'edit';
   initial?: ExperimentInitialData;
+  contextKeys: ContextKeySummary[];
 }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -70,11 +74,32 @@ export function ExperimentWizard({
   const [status, setStatus] = useState<ExperimentConfig['status']>(initial?.status ?? 'draft');
   const [variants, setVariants] = useState<VariantRow[]>(
     initial?.variants ?? [
-      { id: newId(), key: 'control', weight: 50 },
-      { id: newId(), key: 'variant', weight: 50 },
+      { id: newId(), key: 'control', keyEdited: true, weight: 50, label: 'Control' },
+      { id: newId(), key: 'variant', keyEdited: true, weight: 50, label: 'Variant' },
     ]
   );
+
+  function handleVariantLabelChange(i: number, label: string) {
+    const next = [...variants];
+    const row = next[i];
+    next[i] = { ...row, label, key: row.keyEdited ? row.key : slugify(label) };
+    setVariants(next);
+  }
+
+  function handleWeightInputChange(i: number, newWeight: number) {
+    const nextWeights = rebalanceProportional(variants.map((v) => v.weight), i, newWeight);
+    setVariants(variants.map((v, idx) => ({ ...v, weight: nextWeights[idx] })));
+  }
   const [targeting, setTargeting] = useState<TargetingRow[]>(initial?.targeting ?? []);
+
+  const contextKeyByName = new Map(contextKeys.map((k) => [k.key, k]));
+  function operatorsFor(attribute: string): TargetingOperator[] {
+    const type = (contextKeyByName.get(attribute)?.type as ContextKeyType | undefined) ?? 'string';
+    return OPERATORS_BY_TYPE[type];
+  }
+  function maxValuesFor(operator: TargetingOperator): number | undefined {
+    return operator === 'in' || operator === 'notIn' ? undefined : 1;
+  }
 
   function handleNameChange(value: string) {
     setName(value);
@@ -101,7 +126,7 @@ export function ExperimentWizard({
       description,
       conversionEvent,
       status,
-      variants: variants.map((v) => ({ key: v.key, weight: v.weight })),
+      variants: variants.map((v) => ({ key: v.key, weight: v.weight, label: v.label.trim() || undefined })),
       // Always send a real array, even when empty — the PATCH route treats
       // a genuinely missing `targeting` key as "leave it unchanged" (partial
       // update semantics), so sending `undefined` here for "no rules" was
@@ -211,36 +236,44 @@ export function ExperimentWizard({
 
       {step === 1 && (
         <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            Label is just for this dashboard; variant key is what the SDK actually sends.
+          </p>
+
+          <VariantAllocationSliders
+            segments={variants.map((v) => ({ id: v.id, label: v.label || v.key || 'variant', weight: v.weight }))}
+            onChangeWeight={handleWeightInputChange}
+          />
+
           {variants.map((variant, i) => (
             <div key={variant.id} className="flex items-end gap-3">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-slate-700">Label</label>
+                <input
+                  value={variant.label}
+                  onChange={(e) => handleVariantLabelChange(i, e.target.value)}
+                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  placeholder="e.g. Green button"
+                />
+              </div>
               <div className="flex-1">
                 <label className="block text-sm font-medium text-slate-700">Variant key</label>
                 <input
                   value={variant.key}
                   onChange={(e) => {
                     const next = [...variants];
-                    next[i] = { ...variant, key: e.target.value };
+                    next[i] = { ...variant, key: e.target.value, keyEdited: true };
                     setVariants(next);
                   }}
                   className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-mono"
                 />
               </div>
-              <div className="w-28">
-                <label className="block text-sm font-medium text-slate-700">Weight</label>
-                <input
-                  type="number"
-                  value={variant.weight}
-                  onChange={(e) => {
-                    const next = [...variants];
-                    next[i] = { ...variant, weight: Number(e.target.value) };
-                    setVariants(next);
-                  }}
-                  className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
               <button
                 type="button"
-                onClick={() => setVariants(variants.filter((v) => v.id !== variant.id))}
+                onClick={() => {
+                  const remaining = variants.filter((v) => v.id !== variant.id);
+                  setVariants(remaining.map((v, idx) => ({ ...v, weight: equalSplit(remaining.length)[idx] })));
+                }}
                 disabled={variants.length <= 2}
                 className="rounded-md px-2 py-2 text-sm text-rose-600 disabled:opacity-30"
               >
@@ -250,7 +283,10 @@ export function ExperimentWizard({
           ))}
           <button
             type="button"
-            onClick={() => setVariants([...variants, { id: newId(), key: '', weight: 0 }])}
+            onClick={() => {
+              const nextVariants = [...variants, { id: newId(), key: '', keyEdited: false, weight: 0, label: '' }];
+              setVariants(nextVariants.map((v, idx) => ({ ...v, weight: equalSplit(nextVariants.length)[idx] })));
+            }}
             className="text-sm font-medium text-slate-700 underline"
           >
             + Add variant
@@ -271,67 +307,97 @@ export function ExperimentWizard({
           <p className="text-sm text-slate-600">
             Optional. Rules are AND&apos;d together — everyone is eligible if you skip this step.
           </p>
-          {targeting.map((rule, i) => (
-            <div key={rule.id} className="flex items-end gap-2">
-              <div className="flex-1">
-                <label className="block text-xs font-medium text-slate-700">Attribute</label>
-                <input
-                  value={rule.attribute}
-                  onChange={(e) => {
-                    const next = [...targeting];
-                    next[i] = { ...rule, attribute: e.target.value };
-                    setTargeting(next);
-                  }}
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
-                  placeholder="e.g. country"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700">Operator</label>
-                <select
-                  value={rule.operator}
-                  onChange={(e) => {
-                    const next = [...targeting];
-                    next[i] = { ...rule, operator: e.target.value as TargetingOperator };
-                    setTargeting(next);
-                  }}
-                  className="mt-1 rounded-md border border-slate-300 px-2 py-2 text-sm"
+          {contextKeys.length === 0 && (
+            <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-800">
+              No context keys yet — add one from the project page before creating targeting rules.
+            </p>
+          )}
+          {targeting.map((rule, i) => {
+            const keyType = (contextKeyByName.get(rule.attribute)?.type as ContextKeyType | undefined) ?? 'string';
+            const allowedOperators = operatorsFor(rule.attribute);
+            return (
+              <div key={rule.id} className="flex items-end gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-slate-700">Attribute</label>
+                  <select
+                    value={rule.attribute}
+                    onChange={(e) => {
+                      const nextAttribute = e.target.value;
+                      const nextAllowed = operatorsFor(nextAttribute);
+                      const next = [...targeting];
+                      next[i] = {
+                        ...rule,
+                        attribute: nextAttribute,
+                        operator: nextAllowed.includes(rule.operator) ? rule.operator : nextAllowed[0],
+                        value: nextAllowed.includes(rule.operator) ? rule.value : [],
+                      };
+                      setTargeting(next);
+                    }}
+                    className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
+                  >
+                    {contextKeys.map((ck) => (
+                      <option key={ck.id} value={ck.key}>
+                        {ck.label || ck.key}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700">Operator</label>
+                  <select
+                    value={rule.operator}
+                    onChange={(e) => {
+                      const nextOperator = e.target.value as TargetingOperator;
+                      const next = [...targeting];
+                      const max = maxValuesFor(nextOperator);
+                      next[i] = {
+                        ...rule,
+                        operator: nextOperator,
+                        value: max ? rule.value.slice(0, max) : rule.value,
+                      };
+                      setTargeting(next);
+                    }}
+                    className="mt-1 rounded-md border border-slate-300 px-2 py-2 text-sm"
+                  >
+                    {allowedOperators.map((op) => (
+                      <option key={op} value={op}>
+                        {OPERATOR_LABELS[op]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-slate-700">Value</label>
+                  <TagInput
+                    values={rule.value}
+                    type={keyType}
+                    max={maxValuesFor(rule.operator)}
+                    onChange={(nextValue) => {
+                      const next = [...targeting];
+                      next[i] = { ...rule, value: nextValue };
+                      setTargeting(next);
+                    }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTargeting(targeting.filter((r) => r.id !== rule.id))}
+                  className="rounded-md px-2 py-2 text-sm text-rose-600"
                 >
-                  {(['eq', 'neq', 'in', 'notIn', 'gt', 'lt'] as const).map((op) => (
-                    <option key={op} value={op}>
-                      {op}
-                    </option>
-                  ))}
-                </select>
+                  Remove
+                </button>
               </div>
-              <div className="flex-1">
-                <label className="block text-xs font-medium text-slate-700">
-                  Value{(rule.operator === 'in' || rule.operator === 'notIn') && ' (comma-separated)'}
-                </label>
-                <input
-                  value={rule.value}
-                  onChange={(e) => {
-                    const next = [...targeting];
-                    next[i] = { ...rule, value: e.target.value };
-                    setTargeting(next);
-                  }}
-                  type={rule.operator === 'gt' || rule.operator === 'lt' ? 'number' : 'text'}
-                  className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => setTargeting(targeting.filter((r) => r.id !== rule.id))}
-                className="rounded-md px-2 py-2 text-sm text-rose-600"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
+            );
+          })}
           <button
             type="button"
-            onClick={() => setTargeting([...targeting, { id: newId(), attribute: '', operator: 'eq', value: '' }])}
-            className="text-sm font-medium text-slate-700 underline"
+            disabled={contextKeys.length === 0}
+            onClick={() => {
+              const firstKey = contextKeys[0];
+              const allowed = operatorsFor(firstKey.key);
+              setTargeting([...targeting, { id: newId(), attribute: firstKey.key, operator: allowed[0], value: [] }]);
+            }}
+            className="text-sm font-medium text-slate-700 underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
           >
             + Add targeting rule
           </button>
@@ -355,7 +421,9 @@ export function ExperimentWizard({
             <ul className="mt-1 list-disc pl-5">
               {variants.map((v) => (
                 <li key={v.id}>
-                  {v.key} — {v.weight}%
+                  {v.label || v.key}
+                  {v.label && v.label !== v.key && <code className="ml-1.5 text-xs text-slate-400">{v.key}</code>}
+                  {' '}— {v.weight}%
                 </li>
               ))}
             </ul>
@@ -366,7 +434,8 @@ export function ExperimentWizard({
               <ul className="mt-1 list-disc pl-5">
                 {targeting.map((r) => (
                   <li key={r.id}>
-                    {r.attribute} {r.operator} {r.value}
+                    {contextKeyByName.get(r.attribute)?.label || r.attribute} {OPERATOR_LABELS[r.operator]}{' '}
+                    {r.value.join(', ')}
                   </li>
                 ))}
               </ul>

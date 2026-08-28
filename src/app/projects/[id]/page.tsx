@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CreateApiKeyForm } from '@/components/CreateApiKeyForm';
+import { CreateContextKeyForm } from '@/components/CreateContextKeyForm';
+import { DeleteContextKeyButton } from '@/components/DeleteContextKeyButton';
 import { RevokeApiKeyButton } from '@/components/RevokeApiKeyButton';
 import { getCurrentAccount, requireOwnedProject } from '@/lib/authz';
 import { prisma } from '@/lib/db';
@@ -15,9 +17,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const project = await requireOwnedProject(account.id, id);
   if (!project) notFound();
 
-  const [apiKeys, experiments] = await Promise.all([
+  const [apiKeys, experiments, contextKeys] = await Promise.all([
     prisma.apiKey.findMany({ where: { projectId: id }, orderBy: { createdAt: 'desc' } }),
     prisma.experiment.findMany({ where: { projectId: id }, orderBy: { key: 'asc' } }),
+    prisma.contextKey.findMany({ where: { projectId: id }, orderBy: { key: 'asc' } }),
   ]);
 
   return (
@@ -62,6 +65,37 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
         <div className="mt-4 rounded-lg border border-slate-200 bg-white p-5">
           <CreateApiKeyForm projectId={id} />
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold">Context keys</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          The attribute names your app&apos;s SDK integration actually sends (e.g.{' '}
+          <code className="rounded bg-slate-200 px-1.5 py-0.5">page</code>,{' '}
+          <code className="rounded bg-slate-200 px-1.5 py-0.5">device</code>). Only registered keys
+          can be used in an experiment&apos;s targeting rules.
+        </p>
+
+        <div className="mt-4 space-y-2">
+          {contextKeys.length === 0 && <p className="text-sm text-slate-500">No context keys yet.</p>}
+          {contextKeys.map((contextKey) => (
+            <div
+              key={contextKey.id}
+              className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-4 py-3 text-sm"
+            >
+              <div>
+                <span className="font-mono font-medium">{contextKey.key}</span>
+                {contextKey.label && <span className="ml-2 text-slate-500">{contextKey.label}</span>}
+                <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs">{contextKey.type}</span>
+              </div>
+              <DeleteContextKeyButton projectId={id} keyId={contextKey.id} contextKey={contextKey.key} />
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-5">
+          <CreateContextKeyForm projectId={id} />
         </div>
       </section>
 
