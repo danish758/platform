@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { CreateApiKeyForm } from '@/components/CreateApiKeyForm';
 import { CreateContextKeyForm } from '@/components/CreateContextKeyForm';
 import { DeleteContextKeyButton } from '@/components/DeleteContextKeyButton';
+import { DeleteProjectButton } from '@/components/DeleteProjectButton';
 import { RevokeApiKeyButton } from '@/components/RevokeApiKeyButton';
 import { getCurrentAccount, requireOwnedProject } from '@/lib/authz';
 import { prisma } from '@/lib/db';
@@ -123,6 +124,20 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
               <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs">{experiment.status}</span>
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="text-lg font-semibold text-rose-700">Danger zone</h2>
+        <div className="mt-4 flex items-center justify-between rounded-lg border border-rose-200 bg-rose-50 p-5">
+          <div>
+            <div className="font-medium text-rose-900">Delete this project</div>
+            <p className="mt-1 text-sm text-rose-700">
+              Permanently deletes this project and all of its experiments, API keys, context keys,
+              exposures, and conversions.
+            </p>
+          </div>
+          <DeleteProjectButton projectId={id} projectName={project.name} redirectTo="/projects" />
         </div>
       </section>
     </main>
