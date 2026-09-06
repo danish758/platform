@@ -40,6 +40,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       { status: HTTP_STATUS.BAD_REQUEST }
     );
   }
+  if (!label.trim()) {
+    return NextResponse.json({ errors: ['label is required'] }, { status: HTTP_STATUS.BAD_REQUEST });
+  }
   if (!type || !KNOWN_TYPES.has(type)) {
     return NextResponse.json({ errors: ['type must be "string" or "number"'] }, { status: HTTP_STATUS.BAD_REQUEST });
   }

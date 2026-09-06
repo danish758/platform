@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { CreateProjectForm } from '@/components/CreateProjectForm';
+import { DeleteProjectButton } from '@/components/DeleteProjectButton';
 import { LogoutButton } from '@/components/LogoutButton';
 import { getCurrentAccount } from '@/lib/authz';
 import { prisma } from '@/lib/db';
@@ -36,17 +37,19 @@ export default async function ProjectsPage() {
       <div className="mt-8 space-y-3">
         {projects.length === 0 && <p className="text-sm text-slate-500">No projects yet.</p>}
         {projects.map((project) => (
-          <Link
+          <div
             key={project.id}
-            href={`/projects/${project.id}`}
-            className="block rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow"
+            className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow"
           >
-            <div className="font-semibold">{project.name}</div>
-            <div className="mt-1 text-sm text-slate-600">
-              {project._count.experiments} experiment{project._count.experiments === 1 ? '' : 's'} ·{' '}
-              {project._count.apiKeys} API key{project._count.apiKeys === 1 ? '' : 's'}
-            </div>
-          </Link>
+            <Link href={`/projects/${project.id}`} className="min-w-0 flex-1">
+              <div className="font-semibold">{project.name}</div>
+              <div className="mt-1 text-sm text-slate-600">
+                {project._count.experiments} experiment{project._count.experiments === 1 ? '' : 's'} ·{' '}
+                {project._count.apiKeys} API key{project._count.apiKeys === 1 ? '' : 's'}
+              </div>
+            </Link>
+            <DeleteProjectButton projectId={project.id} projectName={project.name} />
+          </div>
         ))}
       </div>
     </main>
