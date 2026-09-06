@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import { DeleteExperimentButton } from '@/components/DeleteExperimentButton';
 import { ExperimentWizard, type ExperimentInitialData } from '@/components/ExperimentWizard';
 import { RerandomizeButton } from '@/components/RerandomizeButton';
-import { getCurrentAccount, requireOwnedProject } from '@/lib/authz';
 import { parseVariantsWithLabels, toConfig } from '@/lib/experiment-repo';
 import { prisma } from '@/lib/db';
 
@@ -17,11 +16,6 @@ export default async function EditExperimentPage({
   params: Promise<{ id: string; key: string }>;
 }) {
   const { id, key } = await params;
-  const account = await getCurrentAccount();
-  if (!account) return null;
-
-  const project = await requireOwnedProject(account.id, id);
-  if (!project) notFound();
 
   const [row, contextKeys] = await Promise.all([
     prisma.experiment.findUnique({ where: { projectId_key: { projectId: id, key } } }),
