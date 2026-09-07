@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ExperimentStatusControl } from '@/components/ExperimentStatusControl';
 import { StatusBadge } from '@/components/stats/StatusBadge';
 import { VariantResultsTable } from '@/components/stats/VariantResultsTable';
 import { getExperimentRow, parseVariantsWithLabels } from '@/lib/experiment-repo';
@@ -29,6 +30,13 @@ export default async function ExperimentDetailPage({
         </div>
         <div className="flex items-center gap-3">
           <StatusBadge status={row.status} />
+          <ExperimentStatusControl
+            variant="action"
+            projectId={projectId}
+            experimentKey={key}
+            experimentName={row.name}
+            status={row.status}
+          />
           <Link
             href={`/projects/${projectId}/experiments/${key}/edit`}
             className="rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-secondary"

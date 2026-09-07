@@ -3,7 +3,7 @@ import type { FC } from 'react';
 import { Badge, type badgeVariants } from '@/components/ui/badge';
 import type { VariantProps } from 'class-variance-authority';
 
-const STATUS_VARIANTS: Record<ExperimentStatus, VariantProps<typeof badgeVariants>['variant']> = {
+export const STATUS_VARIANTS: Record<ExperimentStatus, VariantProps<typeof badgeVariants>['variant']> = {
   running: 'success',
   stopped: 'neutral',
   draft: 'warning',

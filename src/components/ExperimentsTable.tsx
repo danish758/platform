@@ -4,7 +4,7 @@ import type { ExperimentStatus } from '@cro-engine/assignment-engine';
 import type { VariantProps } from 'class-variance-authority';
 import Link from 'next/link';
 import { FC, useMemo, useState } from 'react';
-import { StatusBadge } from '@/components/stats/StatusBadge';
+import { ExperimentStatusControl } from '@/components/ExperimentStatusControl';
 import { Badge, type badgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -130,7 +130,13 @@ export const ExperimentsTable: FC<ExperimentsTableProps> = ({ projectId, experim
                 <TableCell className="text-muted-foreground">{experiment.conversionEvent || '—'}</TableCell>
                 <TableCell className="text-muted-foreground">{experiment.createdAt.slice(0, 10)}</TableCell>
                 <TableCell>
-                  <StatusBadge status={experiment.status} />
+                  <ExperimentStatusControl
+                    variant="select"
+                    projectId={projectId}
+                    experimentKey={experiment.key}
+                    experimentName={experiment.name}
+                    status={experiment.status}
+                  />
                 </TableCell>
                 <TableCell>
                   <Badge variant={RESULT_VARIANTS[experiment.result.tone]}>{experiment.result.label}</Badge>
