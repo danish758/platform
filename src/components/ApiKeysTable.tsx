@@ -2,6 +2,8 @@
 
 import { FC, useMemo, useState } from 'react';
 import { RevokeApiKeyButton } from '@/components/RevokeApiKeyButton';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export type ApiKeyRow = { id: string; label: string | null; createdAt: string; revokedAt: string | null };
 
@@ -26,7 +28,7 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({ projectId, apiKeys }) => {
 
   return (
     <div>
-      <div className="flex items-center gap-6 border-b border-slate-200">
+      <div className="flex items-center gap-6 border-b border-border">
         {TABS.map((tab) => {
           const count = tab === 'Active' ? active.length : revoked.length;
           const isActive = activeTab === tab;
@@ -36,58 +38,62 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({ projectId, apiKeys }) => {
               type="button"
               onClick={() => setActiveTab(tab)}
               className={`flex items-center gap-2 border-b-2 pb-3 text-sm font-medium ${
-                isActive ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-700'
+                isActive
+                  ? 'border-primary text-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
               {tab}
-              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">{count}</span>
+              <span className="rounded bg-secondary px-1.5 py-0.5 text-xs text-muted-foreground">{count}</span>
             </button>
           );
         })}
       </div>
 
-      <input
+      <Input
         type="text"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search..."
-        className="mt-4 w-full max-w-sm rounded-md border border-slate-300 px-3 py-2 text-sm"
+        className="mt-4 max-w-sm"
       />
 
-      <div className="mt-4 overflow-x-auto rounded-lg border border-slate-200">
-        <table className="w-full min-w-[520px] border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 text-left text-slate-500">
-              <th className="px-4 py-3 font-medium">Label</th>
-              <th className="px-4 py-3 font-medium">Created</th>
-              <th className="px-4 py-3 font-medium">Revoked</th>
-              <th className="px-4 py-3 font-medium" />
-            </tr>
-          </thead>
-          <tbody>
+      <div className="mt-4">
+        <Table className="min-w-[520px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Label</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Revoked</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {filtered.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-slate-500">
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
                   {currentTabKeys.length === 0
                     ? activeTab === 'Active'
                       ? 'No active API keys.'
                       : 'No revoked API keys.'
                     : 'No API keys match.'}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
             {filtered.map((key) => (
-              <tr key={key.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium">{key.label || 'Unlabeled key'}</td>
-                <td className="px-4 py-3 text-slate-600">{key.createdAt.slice(0, 10)}</td>
-                <td className="px-4 py-3 text-slate-600">{key.revokedAt ? key.revokedAt.slice(0, 10) : '—'}</td>
-                <td className="px-4 py-3 text-right">
+              <TableRow key={key.id}>
+                <TableCell className="font-medium">{key.label || 'Unlabeled key'}</TableCell>
+                <TableCell className="text-muted-foreground">{key.createdAt.slice(0, 10)}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {key.revokedAt ? key.revokedAt.slice(0, 10) : '—'}
+                </TableCell>
+                <TableCell className="text-right">
                   {!key.revokedAt && <RevokeApiKeyButton projectId={projectId} keyId={key.id} />}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

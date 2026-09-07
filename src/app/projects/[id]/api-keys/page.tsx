@@ -19,8 +19,8 @@ export default async function ApiKeysPage({ params }: { params: Promise<{ id: st
         <h1 className="text-2xl font-bold">API keys</h1>
         <CreateApiKeyForm projectId={id} />
       </div>
-      <p className="mt-1 text-sm text-slate-600">
-        Used by <code className="rounded bg-slate-200 px-1.5 py-0.5">@cro-engine/sdk</code> in a consuming
+      <p className="mt-1 text-sm text-muted-foreground">
+        Used by <code className="rounded bg-secondary px-1.5 py-0.5">@cro-engine/sdk</code> in a consuming
         app to fetch this project&apos;s experiment config and send events.
       </p>
 

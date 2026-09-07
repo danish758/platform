@@ -7,7 +7,7 @@ export function StepIndicator({ steps, currentStep }: { steps: readonly string[]
         <div
           key={label}
           className={`flex-1 border-b-2 pb-2 text-center text-xs font-medium ${
-            index === currentStep ? 'border-slate-900 text-slate-900' : 'border-slate-200 text-slate-400'
+            index === currentStep ? 'border-primary text-foreground' : 'border-border text-muted-foreground'
           }`}
         >
           {index + 1}. {label}

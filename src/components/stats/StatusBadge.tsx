@@ -1,17 +1,15 @@
-import { FC } from 'react';
+import type { FC } from 'react';
+import { Badge, type badgeVariants } from '@/components/ui/badge';
+import type { VariantProps } from 'class-variance-authority';
 
-const STATUS_STYLES: Record<string, string> = {
-  running: 'bg-emerald-100 text-emerald-800',
-  stopped: 'bg-slate-200 text-slate-700',
-  draft: 'bg-amber-100 text-amber-800',
+const STATUS_VARIANTS: Record<string, VariantProps<typeof badgeVariants>['variant']> = {
+  running: 'success',
+  stopped: 'neutral',
+  draft: 'warning',
 };
 
 type StatusBadgeProps = { status: string };
 
 export const StatusBadge: FC<StatusBadgeProps> = ({ status }) => (
-  <span
-    className={`inline-block rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[status] ?? 'bg-slate-100 text-slate-700'}`}
-  >
-    {status}
-  </span>
+  <Badge variant={STATUS_VARIANTS[status] ?? 'neutral'}>{status}</Badge>
 );

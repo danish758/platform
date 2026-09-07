@@ -23,11 +23,11 @@ export function DeleteExperimentButton({ projectId, experimentKey }: { projectId
           router.push(`/projects/${projectId}`);
           router.refresh();
         }}
-        className="rounded-md border border-rose-300 px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-60"
+        className="rounded-md border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20 disabled:opacity-60"
       >
         {pending ? 'Deleting…' : 'Delete experiment'}
       </button>
-      {error && <p className="max-w-xs text-right text-xs text-rose-600">{error}</p>}
+      {error && <p className="max-w-xs text-right text-xs text-destructive">{error}</p>}
     </div>
   );
 }

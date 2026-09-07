@@ -33,17 +33,17 @@ export function TagInput({
   }
 
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-1.5 rounded-md border border-slate-300 px-2 py-1.5">
+    <div className="mt-1 flex flex-wrap items-center gap-1.5 rounded-md border border-input px-2 py-1.5">
       {values.map((value, index) => (
         <span
           key={`${value}-${index}`}
-          className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs"
+          className="flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs"
         >
           {value}
           <button
             type="button"
             onClick={() => onChange(values.filter((_, valueIndex) => valueIndex !== index))}
-            className="text-slate-400 hover:text-slate-700"
+            className="text-muted-foreground hover:text-foreground"
             aria-label={`Remove ${value}`}
           >
             ×
@@ -67,7 +67,7 @@ export function TagInput({
         }}
         onBlur={commitDraft}
         placeholder={atMax ? 'remove to replace' : type === 'number' ? 'number, then Enter' : 'value, then Enter'}
-        className="min-w-[8ch] flex-1 border-none px-1 py-0.5 text-sm outline-none disabled:bg-transparent disabled:placeholder:text-slate-400"
+        className="min-w-[8ch] flex-1 border-none bg-transparent px-1 py-0.5 text-sm outline-none disabled:bg-transparent disabled:placeholder:text-muted-foreground"
       />
     </div>
   );

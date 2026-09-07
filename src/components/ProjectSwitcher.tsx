@@ -33,7 +33,7 @@ export const ProjectSwitcher: FC<ProjectSwitcherProps> = ({ projects, currentPro
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="dark w-full justify-start gap-3 border-slate-700 bg-slate-800 px-3 py-5 text-left text-white hover:bg-slate-700"
+          className="w-full justify-start gap-3 border-border bg-secondary px-3 py-5 text-left text-foreground hover:bg-secondary/70"
         >
           <span
             className={cn(
@@ -44,11 +44,11 @@ export const ProjectSwitcher: FC<ProjectSwitcherProps> = ({ projects, currentPro
             {getInitials(currentProjectName)}
           </span>
           <span className="min-w-0 flex-1 truncate text-sm font-semibold">{currentProjectName}</span>
-          <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="start" className="dark w-[--radix-popover-trigger-width] border-slate-700 bg-slate-800 p-0">
+      <PopoverContent align="start" className="w-[--radix-popover-trigger-width] border-border bg-popover p-0">
         <Command className="bg-transparent">
           <CommandInput placeholder="Search..."  />
           <CommandList>
@@ -57,9 +57,9 @@ export const ProjectSwitcher: FC<ProjectSwitcherProps> = ({ projects, currentPro
               <CommandItem
                 value={ALL_PROJECTS_LABEL}
                 onSelect={() => navigateTo('/projects')}
-                className="gap-3 data-[selected=true]:bg-slate-700"
+                className="gap-3 data-[selected=true]:bg-secondary"
               >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-violet-600 text-[10px] font-bold text-white">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary text-[10px] font-bold text-primary-foreground">
                   ALL
                 </span>
                 <span className="truncate font-medium">{ALL_PROJECTS_LABEL}</span>
@@ -70,7 +70,7 @@ export const ProjectSwitcher: FC<ProjectSwitcherProps> = ({ projects, currentPro
                   key={project.id}
                   value={project.name}
                   onSelect={() => navigateTo(`/projects/${project.id}`)}
-                  className="gap-3 data-[selected=true]:bg-slate-700"
+                  className="gap-3 data-[selected=true]:bg-secondary"
                 >
                   <span
                     className={cn(

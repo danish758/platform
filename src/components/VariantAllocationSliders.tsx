@@ -1,44 +1,24 @@
 'use client';
 
-const SEGMENT_COLORS = ['#0f172a', '#059669', '#2563eb', '#d97706', '#e11d48', '#7c3aed'];
-
-// Literal (not dynamically built) Tailwind arbitrary-variant classes, one
-// set per palette color — Tailwind's JIT compiler only picks up class names
-// it can see verbatim in source, so these can't be assembled from a
-// template string at runtime. Colors the thumb pseudo-element on both
-// engines (::-webkit-slider-thumb / ::-moz-range-thumb); the track's fill
-// itself is a plain inline-style gradient (see trackBackground below), no
-// Tailwind needed there since it's a real background property, not a
-// pseudo-element.
-const THUMB_COLOR_CLASSES = [
-  '[&::-webkit-slider-thumb]:bg-[#0f172a] [&::-moz-range-thumb]:bg-[#0f172a]',
-  '[&::-webkit-slider-thumb]:bg-[#059669] [&::-moz-range-thumb]:bg-[#059669]',
-  '[&::-webkit-slider-thumb]:bg-[#2563eb] [&::-moz-range-thumb]:bg-[#2563eb]',
-  '[&::-webkit-slider-thumb]:bg-[#d97706] [&::-moz-range-thumb]:bg-[#d97706]',
-  '[&::-webkit-slider-thumb]:bg-[#e11d48] [&::-moz-range-thumb]:bg-[#e11d48]',
-  '[&::-webkit-slider-thumb]:bg-[#7c3aed] [&::-moz-range-thumb]:bg-[#7c3aed]',
-];
+import { Input } from '@/components/ui/input';
+import { colorFor, THUMB_COLOR_CLASSES } from '@/lib/variant-palette';
 
 const THUMB_SHAPE_CLASSES =
   '[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 ' +
-  '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white ' +
+  '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-background ' +
   '[&::-webkit-slider-thumb]:shadow [&::-webkit-slider-thumb]:cursor-pointer ' +
   '[&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full ' +
-  '[&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:shadow ' +
+  '[&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-background [&::-moz-range-thumb]:shadow ' +
   '[&::-moz-range-thumb]:cursor-pointer [&::-moz-range-track]:bg-transparent [&::-moz-range-track]:border-none';
 
 type Segment = { id: string; label: string; weight: number };
 
-function colorFor(i: number): string {
-  return SEGMENT_COLORS[i % SEGMENT_COLORS.length];
-}
-
 /** The track itself is just this element's own background (appearance-none
  * lets that show through as the visible track on both engines) — a hard
  * color-stop gradient at the current weight gives the "filled up to the
- * thumb" look, with a light gray remainder past it. */
+ * thumb" look, with the border tone as the remainder. */
 function trackBackground(color: string, weight: number): string {
-  return `linear-gradient(to right, ${color} 0%, ${color} ${weight}%, #e2e8f0 ${weight}%, #e2e8f0 100%)`;
+  return `linear-gradient(to right, ${color} 0%, ${color} ${weight}%, #232c42 ${weight}%, #232c42 100%)`;
 }
 
 /** A CSS conic-gradient donut summarizing the current split — purely a
@@ -54,11 +34,8 @@ function DonutChart({ segments }: { segments: Segment[] }) {
     .join(', ');
 
   return (
-    <div
-      className="relative h-32 w-32 shrink-0 rounded-full"
-      style={{ background: `conic-gradient(${stops})` }}
-    >
-      <div className="absolute inset-[18%] rounded-full bg-white" />
+    <div className="relative h-32 w-32 shrink-0 rounded-full" style={{ background: `conic-gradient(${stops})` }}>
+      <div className="absolute inset-[18%] rounded-full bg-card" />
     </div>
   );
 }
@@ -85,7 +62,7 @@ export function VariantAllocationSliders({
       <div className="flex-1 space-y-4">
         {segments.map((segment, index) => (
           <div key={segment.id}>
-            <div className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+            <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: colorFor(index) }} />
               <span className="truncate">{segment.label}</span>
             </div>
@@ -100,15 +77,15 @@ export function VariantAllocationSliders({
                 style={{ background: trackBackground(colorFor(index), segment.weight) }}
               />
               <div className="flex items-center gap-1">
-                <input
+                <Input
                   type="number"
                   min={0}
                   max={100}
                   value={segment.weight}
                   onChange={(e) => onChangeWeight(index, Number(e.target.value))}
-                  className="w-16 rounded-md border border-slate-300 px-2 py-1 text-sm tabular-nums"
+                  className="w-16 tabular-nums"
                 />
-                <span className="text-sm text-slate-500">%</span>
+                <span className="text-sm text-muted-foreground">%</span>
               </div>
             </div>
           </div>

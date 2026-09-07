@@ -2,6 +2,8 @@
 
 import { useFormContext } from 'react-hook-form';
 import { VariantAllocationSliders } from '@/components/VariantAllocationSliders';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { equalSplit, rebalanceProportional } from '@/lib/variant-weights';
 import type { ExperimentFormValues } from './types';
 import { newId, slugify } from './utils';
@@ -27,7 +29,7 @@ export function VariantsStep({ liveErrors }: { liveErrors: string[] }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-muted-foreground">
         Label is just for this dashboard; variant key is what the SDK actually sends.
       </p>
 
@@ -39,40 +41,39 @@ export function VariantsStep({ liveErrors }: { liveErrors: string[] }) {
       {variants.map((variant, index) => (
         <div key={variant.id} className="flex items-end gap-3">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-slate-700">Label</label>
-            <input
+            <Label>Label</Label>
+            <Input
               {...register(`variants.${index}.label`, {
                 onChange: (e) => {
                   if (!variant.keyEdited) setValue(`variants.${index}.key`, slugify(e.target.value));
                 },
               })}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
               placeholder="e.g. Green button"
             />
           </div>
           <div className="flex-1">
-            <label className="block text-sm font-medium text-slate-700">Variant key</label>
-            <input
+            <Label>Variant key</Label>
+            <Input
               {...register(`variants.${index}.key`, { onChange: () => setValue(`variants.${index}.keyEdited`, true) })}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-mono"
+              className="font-mono"
             />
           </div>
           <button
             type="button"
             onClick={() => handleRemoveVariant(variant.id)}
             disabled={variants.length <= 2}
-            className="rounded-md px-2 py-2 text-sm text-rose-600 disabled:opacity-30"
+            className="rounded-md px-2 py-2 text-sm text-destructive disabled:opacity-30"
           >
             Remove
           </button>
         </div>
       ))}
-      <button type="button" onClick={handleAddVariant} className="text-sm font-medium text-slate-700 underline">
+      <button type="button" onClick={handleAddVariant} className="text-sm font-medium text-foreground underline">
         + Add variant
       </button>
 
       {liveErrors.length > 0 && (
-        <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-800">
+        <div className="rounded-md bg-warning/10 p-3 text-sm text-warning">
           {liveErrors.map((error) => (
             <div key={error}>{error}</div>
           ))}

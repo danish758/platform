@@ -12,10 +12,10 @@ export default async function ContextKeysPage({ params }: { params: Promise<{ id
         <h1 className="text-2xl font-bold">Context keys</h1>
         <CreateContextKeyForm projectId={id} />
       </div>
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-1 text-sm text-muted-foreground">
         The attribute names your app&apos;s SDK integration actually sends (e.g.{' '}
-        <code className="rounded bg-slate-200 px-1.5 py-0.5">page</code>,{' '}
-        <code className="rounded bg-slate-200 px-1.5 py-0.5">device</code>). Only registered keys can be
+        <code className="rounded bg-secondary px-1.5 py-0.5">page</code>,{' '}
+        <code className="rounded bg-secondary px-1.5 py-0.5">device</code>). Only registered keys can be
         used in an experiment&apos;s targeting rules.
       </p>
 
