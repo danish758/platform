@@ -61,14 +61,20 @@ model ApiKey {
   @@index([projectId])
 }
 
+enum ExperimentStatus {
+  draft
+  running
+  stopped
+}
+
 model Experiment {
-  id              String   @id @default(cuid())
+  id              String           @id @default(cuid())
   projectId       String
-  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   key             String
   name            String
   description     String?
-  status          String
+  status          ExperimentStatus @default(draft)
   variantsJson    String
   targetingJson   String?
   seed            Int?
@@ -80,8 +86,8 @@ model Experiment {
   // the wizard's Basics step. Null means the dashboard shows visitor counts
   // only, no significance test.
   conversionEvent String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@unique([projectId, key])
 }
@@ -100,7 +106,7 @@ model ContextKey {
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   key       String
   label     String?
-  type      String // 'string' | 'number' — validated in app code, matching how Experiment.status is a plain String, not a Postgres enum
+  type      String // 'string' | 'number' — validated in app code. Deliberately not a Postgres enum like Experiment.status: this is an open, project-specific set of admin-curated names, not a fixed lifecycle
   createdAt DateTime @default(now())
 
   @@unique([projectId, key])

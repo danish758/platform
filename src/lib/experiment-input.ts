@@ -1,4 +1,5 @@
 import { validateConfig, type ExperimentConfig } from '@cro-engine/assignment-engine';
+import { EXPERIMENT_STATUSES, isExperimentStatus } from './experiment-status';
 import { validateTargeting } from './targeting-validation';
 
 /**
@@ -14,5 +15,6 @@ import { validateTargeting } from './targeting-validation';
  * needs a DB read to check context-key membership.
  */
 export async function validateExperimentInput(projectId: string, config: ExperimentConfig): Promise<string[]> {
-  return [...validateConfig(config), ...(await validateTargeting(projectId, config.targeting ?? []))];
+  const statusErrors = isExperimentStatus(config.status) ? [] : [`status must be one of: ${EXPERIMENT_STATUSES.join(', ')}`];
+  return [...statusErrors, ...validateConfig(config), ...(await validateTargeting(projectId, config.targeting ?? []))];
 }

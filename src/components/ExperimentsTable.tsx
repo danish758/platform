@@ -1,9 +1,10 @@
 'use client';
 
+import type { ExperimentStatus } from '@cro-engine/assignment-engine';
 import type { VariantProps } from 'class-variance-authority';
 import Link from 'next/link';
 import { FC, useMemo, useState } from 'react';
-import { StatusBadge } from '@/components/stats/StatusBadge';
+import { ExperimentStatusControl } from '@/components/ExperimentStatusControl';
 import { Badge, type badgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,7 @@ export type ExperimentRow = {
   id: string;
   key: string;
   name: string;
-  status: string;
+  status: ExperimentStatus;
   conversionEvent: string | null;
   createdAt: string;
   result: ResultSummary;
@@ -22,7 +23,7 @@ export type ExperimentRow = {
 
 type ExperimentsTableProps = { projectId: string; experiments: ExperimentRow[] };
 
-const STATUS_TABS: { label: string; status: string | null }[] = [
+const STATUS_TABS: { label: string; status: ExperimentStatus | null }[] = [
   { label: 'All Experiments', status: null },
   { label: 'Running', status: 'running' },
   { label: 'Drafts', status: 'draft' },
@@ -37,7 +38,7 @@ const RESULT_VARIANTS: Record<ResultSummary['tone'], VariantProps<typeof badgeVa
 };
 
 export const ExperimentsTable: FC<ExperimentsTableProps> = ({ projectId, experiments }) => {
-  const [activeStatus, setActiveStatus] = useState<string | null>(null);
+  const [activeStatus, setActiveStatus] = useState<ExperimentStatus | null>(null);
   const [search, setSearch] = useState('');
 
   const countByStatus = useMemo(() => {
@@ -129,7 +130,13 @@ export const ExperimentsTable: FC<ExperimentsTableProps> = ({ projectId, experim
                 <TableCell className="text-muted-foreground">{experiment.conversionEvent || '—'}</TableCell>
                 <TableCell className="text-muted-foreground">{experiment.createdAt.slice(0, 10)}</TableCell>
                 <TableCell>
-                  <StatusBadge status={experiment.status} />
+                  <ExperimentStatusControl
+                    variant="select"
+                    projectId={projectId}
+                    experimentKey={experiment.key}
+                    experimentName={experiment.name}
+                    status={experiment.status}
+                  />
                 </TableCell>
                 <TableCell>
                   <Badge variant={RESULT_VARIANTS[experiment.result.tone]}>{experiment.result.label}</Badge>
