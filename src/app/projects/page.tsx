@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { CreateProjectForm } from '@/components/CreateProjectForm';
 import { DeleteProjectButton } from '@/components/DeleteProjectButton';
 import { LogoutButton } from '@/components/LogoutButton';
+import { Card, CardContent } from '@/components/ui/card';
 import { getCurrentAccount } from '@/lib/authz';
 import { prisma } from '@/lib/db';
 
@@ -25,31 +26,30 @@ export default async function ProjectsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Your projects</h1>
-          <p className="mt-1 text-sm text-slate-600">{account.email}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{account.email}</p>
         </div>
         <LogoutButton />
       </div>
 
-      <div className="mt-8 rounded-lg border border-slate-200 bg-white p-5">
-        <CreateProjectForm />
-      </div>
+      <Card className="mt-8">
+        <CardContent>
+          <CreateProjectForm />
+        </CardContent>
+      </Card>
 
       <div className="mt-8 space-y-3">
-        {projects.length === 0 && <p className="text-sm text-slate-500">No projects yet.</p>}
+        {projects.length === 0 && <p className="text-sm text-muted-foreground">No projects yet.</p>}
         {projects.map((project) => (
-          <div
-            key={project.id}
-            className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow"
-          >
+          <Card key={project.id} className="flex items-center justify-between gap-4 p-5 hover:border-ring/40">
             <Link href={`/projects/${project.id}`} className="min-w-0 flex-1">
               <div className="font-semibold">{project.name}</div>
-              <div className="mt-1 text-sm text-slate-600">
+              <div className="mt-1 text-sm text-muted-foreground">
                 {project._count.experiments} experiment{project._count.experiments === 1 ? '' : 's'} ·{' '}
                 {project._count.apiKeys} API key{project._count.apiKeys === 1 ? '' : 's'}
               </div>
             </Link>
             <DeleteProjectButton projectId={project.id} projectName={project.name} />
-          </div>
+          </Card>
         ))}
       </div>
     </main>

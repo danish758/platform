@@ -17,11 +17,11 @@ export function RevokeApiKeyButton({ projectId, keyId }: { projectId: string; ke
           if (!body) return;
           router.refresh();
         }}
-        className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-60"
+        className="text-xs font-medium text-destructive hover:underline disabled:opacity-60"
       >
         {pending ? 'Revoking…' : 'Revoke'}
       </button>
-      {error && <p className="max-w-xs text-right text-xs text-rose-600">{error}</p>}
+      {error && <p className="max-w-xs text-right text-xs text-destructive">{error}</p>}
     </div>
   );
 }

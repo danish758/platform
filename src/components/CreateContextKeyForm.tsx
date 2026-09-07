@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useApiRequest } from '@/hooks/useApiRequest';
 
 export function CreateContextKeyForm({ projectId }: { projectId: string }) {
@@ -43,38 +45,32 @@ export function CreateContextKeyForm({ projectId }: { projectId: string }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Key</label>
-            <input
+            <Label>Key</Label>
+            <Input
               value={key}
               onChange={(e) => setKey(e.target.value)}
               placeholder="e.g. page"
               autoFocus
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-mono"
+              className="font-mono"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700">Label</label>
-            <input
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder="e.g. Page path"
-              required
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            />
+            <Label>Label</Label>
+            <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Page path" required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700">Type</label>
+            <Label>Type</Label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value as 'string' | 'number')}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="string">string</option>
               <option value="number">number</option>
             </select>
           </div>
 
-          {error && <p className="text-sm text-rose-600">{error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           <DialogFooter>
             <Button type="submit" disabled={pending || !key || !label.trim()}>

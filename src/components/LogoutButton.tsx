@@ -17,11 +17,11 @@ export function LogoutButton() {
           router.push('/login');
           router.refresh();
         }}
-        className="text-sm font-medium text-slate-500 hover:text-slate-900"
+        className="text-sm font-medium text-muted-foreground hover:text-foreground"
       >
         Log out
       </button>
-      {error && <p className="max-w-xs text-right text-xs text-rose-600">{error}</p>}
+      {error && <p className="max-w-xs text-right text-xs text-destructive">{error}</p>}
     </div>
   );
 }

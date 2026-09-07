@@ -2,6 +2,7 @@ import type { SignificanceResult, VariantStats } from '@cro-engine/stats-engine'
 import Link from 'next/link';
 import { StatusBadge } from '@/components/stats/StatusBadge';
 import { VariantResultsTable } from '@/components/stats/VariantResultsTable';
+import { Card } from '@/components/ui/card';
 import { prisma } from '@/lib/db';
 import { parseVariantsWithLabels } from '@/lib/experiment-repo';
 import { analyzeExperimentRow } from '@/lib/stats';
@@ -15,14 +16,14 @@ export default async function ProjectDashboardPage({ params }: { params: Promise
   return (
     <div className="mx-auto max-w-4xl">
       <h1 className="text-2xl font-bold">Stats dashboard</h1>
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-1 text-sm text-muted-foreground">
         Visitor/conversion counts are unique users (deduplicated exposures, unique converting users) —
         not raw event counts. The baseline for lift/significance is each experiment&apos;s first-listed
         variant.
       </p>
 
       <div className="mt-10 space-y-10">
-        {experiments.length === 0 && <p className="text-sm text-slate-500">No experiments yet.</p>}
+        {experiments.length === 0 && <p className="text-sm text-muted-foreground">No experiments yet.</p>}
         {experiments.map((experiment, index) => {
           const analysis = analyses[index];
           const variants = parseVariantsWithLabels(experiment);
@@ -71,42 +72,44 @@ function ExperimentCard({
   statsByVariant: Record<string, VariantStats>;
 }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">{name}</h2>
-          <code className="text-xs text-slate-400">{experimentKey}</code>
+    <Card className="p-6">
+      <section>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">{name}</h2>
+            <code className="text-xs text-muted-foreground">{experimentKey}</code>
+          </div>
+          <div className="flex items-center gap-3">
+            <StatusBadge status={status} />
+            <Link
+              href={`/projects/${projectId}/experiments/${experimentKey}`}
+              className="text-xs font-medium text-muted-foreground hover:underline"
+            >
+              View details →
+            </Link>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <StatusBadge status={status} />
-          <Link
-            href={`/projects/${projectId}/experiments/${experimentKey}`}
-            className="text-xs font-medium text-slate-500 hover:underline"
-          >
-            View details →
-          </Link>
-        </div>
-      </div>
 
-      {!conversionEvent && (
-        <p className="mt-3 text-xs text-amber-700">
-          No conversion event configured — showing visitor counts only. Set one in the experiment&apos;s
-          settings to see significance.
-        </p>
-      )}
+        {!conversionEvent && (
+          <p className="mt-3 text-xs text-warning">
+            No conversion event configured — showing visitor counts only. Set one in the experiment&apos;s
+            settings to see significance.
+          </p>
+        )}
 
-      {!results || results.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500">No exposures logged yet.</p>
-      ) : (
-        <div className="mt-6">
-          <VariantResultsTable
-            results={results}
-            statsByVariant={statsByVariant}
-            labelByKey={labelByKey}
-            baselineKey={baselineKey}
-          />
-        </div>
-      )}
-    </section>
+        {!results || results.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">No exposures logged yet.</p>
+        ) : (
+          <div className="mt-6">
+            <VariantResultsTable
+              results={results}
+              statsByVariant={statsByVariant}
+              labelByKey={labelByKey}
+              baselineKey={baselineKey}
+            />
+          </div>
+        )}
+      </section>
+    </Card>
   );
 }

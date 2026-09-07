@@ -2,6 +2,9 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -37,38 +40,30 @@ export default function SignupPage() {
       <h1 className="text-2xl font-bold">Create an account</h1>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-slate-700">Email</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-          />
+          <Label>Email</Label>
+          <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700">Password</label>
-          <input
+          <Label>Password</Label>
+          <Input
             type="password"
             required
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
           />
-          <p className="mt-1 text-xs text-slate-500">At least 8 characters.</p>
+          <p className="mt-1 text-xs text-muted-foreground">At least 8 characters.</p>
         </div>
-        {error && <p className="text-sm text-rose-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-        >
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <Button type="submit" disabled={submitting} className="w-full">
           {submitting ? 'Creating account…' : 'Sign up'}
-        </button>
+        </Button>
       </form>
-      <p className="mt-4 text-sm text-slate-600">
-        Already have an account? <a href="/login" className="font-medium text-slate-900 underline">Log in</a>
+      <p className="mt-4 text-sm text-muted-foreground">
+        Already have an account?{' '}
+        <a href="/login" className="font-medium text-primary underline">
+          Log in
+        </a>
       </p>
     </main>
   );

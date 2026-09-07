@@ -34,11 +34,11 @@ export function RerandomizeButton({
           if (!body) return;
           router.refresh();
         }}
-        className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium hover:bg-slate-100 disabled:opacity-60"
+        className="rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary disabled:opacity-60"
       >
         {pending ? 'Re-randomizing…' : 'Force re-randomize'}
       </button>
-      {error && <p className="max-w-xs text-right text-xs text-rose-600">{error}</p>}
+      {error && <p className="max-w-xs text-right text-xs text-destructive">{error}</p>}
     </div>
   );
 }

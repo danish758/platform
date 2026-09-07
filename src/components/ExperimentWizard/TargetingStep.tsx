@@ -3,9 +3,13 @@
 import type { TargetingOperator } from '@cro-engine/assignment-engine';
 import { useFormContext } from 'react-hook-form';
 import { TagInput } from '@/components/TagInput';
+import { Label } from '@/components/ui/label';
 import { OPERATOR_LABELS, type ContextKeyType } from '@/lib/targeting-labels';
 import type { ContextKeySummary, ExperimentFormValues, TargetingRow } from './types';
 import { contextKeyMap, maxValuesForOperator, newId, operatorsForAttribute } from './utils';
+
+const SELECT_CLASSES =
+  'mt-1 flex h-9 rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
 export function TargetingStep({ contextKeys }: { contextKeys: ContextKeySummary[] }) {
   const { watch, setValue } = useFormContext<ExperimentFormValues>();
@@ -30,11 +34,11 @@ export function TargetingStep({ contextKeys }: { contextKeys: ContextKeySummary[
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-muted-foreground">
         Optional. Rules are AND&apos;d together — everyone is eligible if you skip this step.
       </p>
       {contextKeys.length === 0 && (
-        <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-800">
+        <p className="rounded-md bg-warning/10 p-3 text-sm text-warning">
           No context keys yet — add one from the project page before creating targeting rules.
         </p>
       )}
@@ -45,7 +49,7 @@ export function TargetingStep({ contextKeys }: { contextKeys: ContextKeySummary[
         return (
           <div key={rule.id} className="flex items-end gap-2">
             <div className="flex-1">
-              <label className="block text-xs font-medium text-slate-700">Attribute</label>
+              <Label className="text-xs">Attribute</Label>
               <select
                 value={rule.attribute}
                 onChange={(e) => {
@@ -58,7 +62,7 @@ export function TargetingStep({ contextKeys }: { contextKeys: ContextKeySummary[
                     value: nextAllowed.includes(rule.operator) ? rule.value : [],
                   });
                 }}
-                className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2 text-sm"
+                className={`${SELECT_CLASSES} w-full`}
               >
                 {contextKeys.map((contextKey) => (
                   <option key={contextKey.id} value={contextKey.key}>
@@ -68,7 +72,7 @@ export function TargetingStep({ contextKeys }: { contextKeys: ContextKeySummary[
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-700">Operator</label>
+              <Label className="text-xs">Operator</Label>
               <select
                 value={rule.operator}
                 onChange={(e) => {
@@ -80,7 +84,7 @@ export function TargetingStep({ contextKeys }: { contextKeys: ContextKeySummary[
                     value: max ? rule.value.slice(0, max) : rule.value,
                   });
                 }}
-                className="mt-1 rounded-md border border-slate-300 px-2 py-2 text-sm"
+                className={SELECT_CLASSES}
               >
                 {allowedOperators.map((operator) => (
                   <option key={operator} value={operator}>
@@ -90,7 +94,7 @@ export function TargetingStep({ contextKeys }: { contextKeys: ContextKeySummary[
               </select>
             </div>
             <div className="flex-1">
-              <label className="block text-xs font-medium text-slate-700">Value</label>
+              <Label className="text-xs">Value</Label>
               <TagInput
                 values={rule.value}
                 type={keyType}
@@ -101,7 +105,7 @@ export function TargetingStep({ contextKeys }: { contextKeys: ContextKeySummary[
             <button
               type="button"
               onClick={() => removeRule(rule.id)}
-              className="rounded-md px-2 py-2 text-sm text-rose-600"
+              className="rounded-md px-2 py-2 text-sm text-destructive"
             >
               Remove
             </button>
@@ -112,7 +116,7 @@ export function TargetingStep({ contextKeys }: { contextKeys: ContextKeySummary[
         type="button"
         disabled={contextKeys.length === 0}
         onClick={addRule}
-        className="text-sm font-medium text-slate-700 underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+        className="text-sm font-medium text-foreground underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
       >
         + Add targeting rule
       </button>

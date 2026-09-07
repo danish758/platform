@@ -14,6 +14,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useApiRequest } from '@/hooks/useApiRequest';
 
 type DeleteProjectButtonProps = {
@@ -65,7 +66,7 @@ export function DeleteProjectButton({ projectId, projectName, redirectTo }: Dele
           type="button"
           variant="outline"
           size="sm"
-          className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+          className="border-destructive/50 bg-transparent text-destructive hover:bg-destructive/20 hover:text-destructive"
         >
           Delete
         </Button>
@@ -83,23 +84,17 @@ export function DeleteProjectButton({ projectId, projectName, redirectTo }: Dele
           <label htmlFor="confirm-project-name" className="text-sm font-medium">
             Type <span className="font-semibold">{projectName}</span> to confirm
           </label>
-          <input
-            id="confirm-project-name"
-            value={confirmText}
-            onChange={(e) => setConfirmText(e.target.value)}
-            autoComplete="off"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-          />
+          <Input id="confirm-project-name" value={confirmText} onChange={(e) => setConfirmText(e.target.value)} autoComplete="off" />
         </div>
 
-        {error && <p className="text-sm text-rose-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             disabled={!canDelete || pending}
             onClick={handleDelete}
-            className="bg-rose-600 text-white hover:bg-rose-700"
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {pending ? 'Deleting…' : 'Delete project'}
           </AlertDialogAction>
