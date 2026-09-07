@@ -11,8 +11,10 @@ npm run build            # Production build
 npm run lint             # ESLint via Next.js
 
 # Database
-npm run db:push          # Push Prisma schema changes to database
-npm run seed:context-keys  # Seed initial context attributes
+npm run db:migrate          # Create + apply a new migration during local development (tracked in prisma/migrations)
+npm run db:migrate:deploy   # Apply pending migrations non-interactively (CI/production)
+npm run db:push             # Push schema changes directly with no migration history — reserved for the disposable test DB (see src/test/setup.ts); do not use for changes headed to production
+npm run seed:context-keys   # Seed initial context attributes
 
 # Tests (require Postgres running: docker compose up -d postgres)
 npm test                 # Run all tests once

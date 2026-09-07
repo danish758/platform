@@ -12,7 +12,7 @@ export const TEST_DATABASE_URL = `postgresql://cro:cro@localhost:55432/${TEST_DB
  */
 export function setupTestDatabase(): void {
   execSync(
-    `docker exec cro-engine-postgres-1 psql -U cro -d cro_engine -tc "SELECT 1 FROM pg_database WHERE datname = '${TEST_DB_NAME}'" | grep -q 1 || docker exec cro-engine-postgres-1 psql -U cro -d cro_engine -c "CREATE DATABASE ${TEST_DB_NAME}"`,
+    `docker exec platform-postgres-1 psql -U cro -d cro_engine -tc "SELECT 1 FROM pg_database WHERE datname = '${TEST_DB_NAME}'" | grep -q 1 || docker exec platform-postgres-1 psql -U cro -d cro_engine -c "CREATE DATABASE ${TEST_DB_NAME}"`,
     { stdio: 'pipe', shell: '/bin/bash' }
   );
 

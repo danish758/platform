@@ -1,5 +1,6 @@
 'use client';
 
+import type { ExperimentStatus } from '@cro-engine/assignment-engine';
 import type { VariantProps } from 'class-variance-authority';
 import Link from 'next/link';
 import { FC, useMemo, useState } from 'react';
@@ -14,7 +15,7 @@ export type ExperimentRow = {
   id: string;
   key: string;
   name: string;
-  status: string;
+  status: ExperimentStatus;
   conversionEvent: string | null;
   createdAt: string;
   result: ResultSummary;
@@ -22,7 +23,7 @@ export type ExperimentRow = {
 
 type ExperimentsTableProps = { projectId: string; experiments: ExperimentRow[] };
 
-const STATUS_TABS: { label: string; status: string | null }[] = [
+const STATUS_TABS: { label: string; status: ExperimentStatus | null }[] = [
   { label: 'All Experiments', status: null },
   { label: 'Running', status: 'running' },
   { label: 'Drafts', status: 'draft' },
@@ -37,7 +38,7 @@ const RESULT_VARIANTS: Record<ResultSummary['tone'], VariantProps<typeof badgeVa
 };
 
 export const ExperimentsTable: FC<ExperimentsTableProps> = ({ projectId, experiments }) => {
-  const [activeStatus, setActiveStatus] = useState<string | null>(null);
+  const [activeStatus, setActiveStatus] = useState<ExperimentStatus | null>(null);
   const [search, setSearch] = useState('');
 
   const countByStatus = useMemo(() => {

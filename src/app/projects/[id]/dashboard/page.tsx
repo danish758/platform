@@ -1,3 +1,4 @@
+import type { ExperimentStatus } from '@cro-engine/assignment-engine';
 import type { SignificanceResult, VariantStats } from '@cro-engine/stats-engine';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/stats/StatusBadge';
@@ -64,7 +65,7 @@ function ExperimentCard({
   projectId: string;
   name: string;
   experimentKey: string;
-  status: string;
+  status: ExperimentStatus;
   conversionEvent: string | null;
   baselineKey: string | undefined;
   labelByKey: Record<string, string>;
