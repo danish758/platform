@@ -4,7 +4,8 @@ import type { ExperimentStatus } from '@cro-engine/assignment-engine';
 import { Check, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { STATUS_VARIANTS } from '@/components/stats/StatusBadge';
+import { STATUS_DOT_CLASS, STATUS_VARIANTS } from '@/components/stats/StatusBadge';
+import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,12 +28,6 @@ const NEXT_ACTION: Record<ExperimentStatus, { label: string; pendingLabel: strin
 };
 
 const ALL_STATUSES: ExperimentStatus[] = ['draft', 'running', 'stopped'];
-
-const DOT_CLASS: Record<ExperimentStatus, string> = {
-  running: 'bg-success',
-  draft: 'bg-warning',
-  stopped: 'bg-neutral',
-};
 
 type ExperimentStatusControlProps = {
   projectId: string;
@@ -124,7 +119,7 @@ export function ExperimentStatusControl({
                 'hover:border-current/40 disabled:opacity-60'
               )}
             >
-              <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', DOT_CLASS[status])} />
+              <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', STATUS_DOT_CLASS[status])} />
               {status}
               <ChevronDown
                 className={cn(
@@ -145,7 +140,7 @@ export function ExperimentStatusControl({
                 }}
                 className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-secondary"
               >
-                <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', DOT_CLASS[option])} />
+                <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', STATUS_DOT_CLASS[option])} />
                 <span className="flex-1 text-left">{option}</span>
                 {option === status && <Check className="h-4 w-4 shrink-0 text-muted-foreground" />}
               </button>
@@ -159,17 +154,24 @@ export function ExperimentStatusControl({
   }
 
   const { label, pendingLabel, next } = NEXT_ACTION[status];
+  // Starting/restarting is constructive (primary, filled); stopping halts
+  // traffic, so it gets a quieter, cautionary outline instead of the same
+  // solid blue used for the positive action.
+  const isStopping = next === 'stopped';
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <button
+      <Button
         type="button"
         disabled={pending}
         onClick={() => requestStatus(next)}
-        className="rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-secondary disabled:opacity-60"
+        variant={isStopping ? 'outline' : 'default'}
+        className={
+          isStopping ? 'border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive' : undefined
+        }
       >
         {pending ? pendingLabel : label}
-      </button>
+      </Button>
       {error && <p className="max-w-xs text-right text-xs text-destructive">{error}</p>}
       {confirmDialog}
     </div>

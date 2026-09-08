@@ -66,6 +66,9 @@ export async function PATCH(request: Request, { params }: Params): Promise<NextR
     return NextResponse.json({ errors }, { status: HTTP_STATUS.BAD_REQUEST });
   }
 
+  const statusChangedToRunning = mergedConfig.status === 'running' && existingRow.status !== 'running';
+  const statusChangedToStopped = mergedConfig.status === 'stopped' && existingRow.status !== 'stopped';
+
   const row = await prisma.experiment.update({
     where: { projectId_key: { projectId, key } },
     data: {
@@ -77,6 +80,10 @@ export async function PATCH(request: Request, { params }: Params): Promise<NextR
       variantsJson: JSON.stringify(mergedVariants),
       targetingJson: mergedConfig.targeting ? JSON.stringify(mergedConfig.targeting) : null,
       seed: mergedConfig.seed ?? null,
+      // A restart (stopped -> running) bumps startedAt again — it's the
+      // start of this run of traffic, not of the experiment row's lifetime.
+      ...(statusChangedToRunning && { startedAt: new Date() }),
+      ...(statusChangedToStopped && { stoppedAt: new Date() }),
     },
   });
 
