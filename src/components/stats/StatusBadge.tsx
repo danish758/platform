@@ -9,6 +9,12 @@ export const STATUS_VARIANTS: Record<ExperimentStatus, VariantProps<typeof badge
   draft: 'warning',
 };
 
+export const STATUS_DOT_CLASS: Record<ExperimentStatus, string> = {
+  running: 'bg-success',
+  draft: 'bg-warning',
+  stopped: 'bg-neutral',
+};
+
 type StatusBadgeProps = { status: ExperimentStatus };
 
 export const StatusBadge: FC<StatusBadgeProps> = ({ status }) => (

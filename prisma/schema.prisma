@@ -78,6 +78,12 @@ model Experiment {
   variantsJson    String
   targetingJson   String?
   seed            Int?
+  // Set by the status-transition PATCH handler, not user-editable directly:
+  // startedAt on every draft/stopped -> running transition (a restart bumps
+  // it, since that's a new run of traffic), stoppedAt on running -> stopped.
+  // Distinct from createdAt/updatedAt, which track the row, not the run.
+  startedAt       DateTime?
+  stoppedAt       DateTime?
   // The conversion event name this experiment is measured against (what the
   // SDK's trackConversion(eventName) calls should match for this
   // experiment's dashboard). Optional — with experiments now created
