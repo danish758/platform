@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { CreateProjectForm } from '@/components/CreateProjectForm';
 import { DeleteProjectButton } from '@/components/DeleteProjectButton';
-import { LogoutButton } from '@/components/LogoutButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { getCurrentAccount } from '@/lib/authz';
 import { prisma } from '@/lib/db';
@@ -23,13 +22,7 @@ export default async function ProjectsPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Your projects</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{account.email}</p>
-        </div>
-        <LogoutButton />
-      </div>
+      <h1 className="text-2xl font-bold">Your projects</h1>
 
       <Card className="mt-8">
         <CardContent>
