@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ExperimentStatusControl } from '@/components/ExperimentStatusControl';
+import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { DailyExposuresChart } from '@/components/experiment-detail/DailyExposuresChart';
 import { DiagnosticsBanner } from '@/components/experiment-detail/DiagnosticsBanner';
 import { ObservedSplitBar } from '@/components/experiment-detail/ObservedSplitBar';
@@ -15,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getDailyExposureSeries } from '@/lib/daily-exposures';
 import { prisma } from '@/lib/db';
 import { getExperimentRow, parseVariantsWithLabels, toConfig } from '@/lib/experiment-repo';
+import { getProjectName } from '@/lib/project-repo';
 import { sampleProgress } from '@/lib/stats-format';
 import { analyzeExperimentRow } from '@/lib/stats';
 import { checkSampleRatioMismatch } from '@/lib/srm';
@@ -37,7 +39,10 @@ export default async function ExperimentDetailPage({
   const { results = null, statsByVariant = {} } = analysis || {};
 
   const config = toConfig(row);
-  const contextKeys = await prisma.contextKey.findMany({ where: { projectId } });
+  const [contextKeys, projectName] = await Promise.all([
+    prisma.contextKey.findMany({ where: { projectId } }),
+    getProjectName(projectId),
+  ]);
   const labelByAttribute = Object.fromEntries(contextKeys.map((contextKey) => [contextKey.key, contextKey.label || contextKey.key]));
 
   const observedVisitors = Object.fromEntries(
@@ -65,7 +70,15 @@ export default async function ExperimentDetailPage({
   const dailyVisitorRate = row.startedAt ? totalVisitors / daysElapsed : null;
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div>
+      <PageBreadcrumb
+        items={[
+          { label: 'Projects', href: '/projects' },
+          { label: projectName, href: `/projects/${projectId}` },
+          { label: 'Experiments', href: `/projects/${projectId}/experiments` },
+          { label: row.name },
+        ]}
+      />
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">{row.name}</h1>
