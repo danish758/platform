@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, type FC, type MouseEvent } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,15 +11,15 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useApiRequest } from '@/hooks/useApiRequest';
 
-type DeleteProjectButtonProps = {
+type DeleteProjectDialogProps = {
   projectId: string;
   projectName: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   // Where to send the user after a successful delete. Omit to stay on the
   // current page and just refresh it (the projects list); pass a path (e.g.
   // "/projects") to navigate away, for use from a page about the project
@@ -27,25 +27,30 @@ type DeleteProjectButtonProps = {
   redirectTo?: string;
 };
 
-export function DeleteProjectButton({ projectId, projectName, redirectTo }: DeleteProjectButtonProps) {
+export const DeleteProjectDialog: FC<DeleteProjectDialogProps> = ({
+  projectId,
+  projectName,
+  open,
+  onOpenChange,
+  redirectTo,
+}) => {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const { run, pending, error } = useApiRequest();
 
   const canDelete = confirmText === projectName;
 
-  async function handleDelete(e: React.MouseEvent<HTMLButtonElement>) {
+  async function handleDelete(event: MouseEvent<HTMLButtonElement>) {
     // Radix closes the dialog on any Action click by default — prevent that
     // so the dialog stays open (showing pending/error state) until the
     // request actually resolves.
-    e.preventDefault();
+    event.preventDefault();
     if (!canDelete || pending) return;
 
     const body = await run(`/api/projects/${projectId}`, { method: 'DELETE' }, 'Failed to delete project');
     if (!body) return;
 
-    setOpen(false);
+    onOpenChange(false);
     if (redirectTo) {
       router.push(redirectTo);
     } else {
@@ -57,20 +62,10 @@ export function DeleteProjectButton({ projectId, projectName, redirectTo }: Dele
     <AlertDialog
       open={open}
       onOpenChange={(nextOpen) => {
-        setOpen(nextOpen);
+        onOpenChange(nextOpen);
         if (!nextOpen) setConfirmText('');
       }}
     >
-      <AlertDialogTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="border-destructive/50 bg-transparent text-destructive hover:bg-destructive/20 hover:text-destructive"
-        >
-          Delete
-        </Button>
-      </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete &quot;{projectName}&quot;?</AlertDialogTitle>
@@ -102,4 +97,4 @@ export function DeleteProjectButton({ projectId, projectName, redirectTo }: Dele
       </AlertDialogContent>
     </AlertDialog>
   );
-}
+};
