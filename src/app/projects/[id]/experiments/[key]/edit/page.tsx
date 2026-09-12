@@ -1,9 +1,11 @@
 import { notFound } from 'next/navigation';
 import { DeleteExperimentButton } from '@/components/DeleteExperimentButton';
 import { ExperimentWizard, type ExperimentInitialData } from '@/components/ExperimentWizard';
+import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { RerandomizeButton } from '@/components/RerandomizeButton';
 import { parseVariantsWithLabels, toConfig } from '@/lib/experiment-repo';
 import { prisma } from '@/lib/db';
+import { getProjectName } from '@/lib/project-repo';
 
 function targetingValueToChips(value: string | number | string[]): string[] {
   if (Array.isArray(value)) return value.map(String);
@@ -17,9 +19,10 @@ export default async function EditExperimentPage({
 }) {
   const { id, key } = await params;
 
-  const [row, contextKeys] = await Promise.all([
+  const [row, contextKeys, projectName] = await Promise.all([
     prisma.experiment.findUnique({ where: { projectId_key: { projectId: id, key } } }),
     prisma.contextKey.findMany({ where: { projectId: id }, orderBy: { key: 'asc' } }),
+    getProjectName(id),
   ]);
   if (!row) notFound();
 
@@ -47,10 +50,21 @@ export default async function EditExperimentPage({
 
   return (
     <div>
-      <div className="mx-auto flex max-w-2xl items-center justify-between px-6 pt-8">
-        <div className="flex gap-2">
-          <RerandomizeButton projectId={id} experimentKey={key} currentSeed={config.seed ?? 0} />
-          <DeleteExperimentButton projectId={id} experimentKey={key} />
+      <div className="mx-auto max-w-2xl px-6 pt-8">
+        <PageBreadcrumb
+          items={[
+            { label: 'Projects', href: '/projects' },
+            { label: projectName, href: `/projects/${id}` },
+            { label: 'Experiments', href: `/projects/${id}/experiments` },
+            { label: row.name, href: `/projects/${id}/experiments/${key}` },
+            { label: 'Edit' },
+          ]}
+        />
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex gap-2">
+            <RerandomizeButton projectId={id} experimentKey={key} currentSeed={config.seed ?? 0} />
+            <DeleteExperimentButton projectId={id} experimentKey={key} />
+          </div>
         </div>
       </div>
       <ExperimentWizard projectId={id} mode="edit" initial={initial} contextKeys={contextKeys} />

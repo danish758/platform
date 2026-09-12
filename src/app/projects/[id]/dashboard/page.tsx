@@ -1,21 +1,33 @@
 import type { ExperimentStatus } from '@cro-engine/assignment-engine';
 import type { SignificanceResult, VariantStats } from '@cro-engine/stats-engine';
 import Link from 'next/link';
+import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { StatusBadge } from '@/components/stats/StatusBadge';
 import { VariantResultsTable } from '@/components/stats/VariantResultsTable';
 import { Card } from '@/components/ui/card';
 import { prisma } from '@/lib/db';
 import { parseVariantsWithLabels } from '@/lib/experiment-repo';
+import { getProjectName } from '@/lib/project-repo';
 import { analyzeExperimentRow } from '@/lib/stats';
 
 export default async function ProjectDashboardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: projectId } = await params;
 
-  const experiments = await prisma.experiment.findMany({ where: { projectId }, orderBy: { key: 'asc' } });
+  const [experiments, projectName] = await Promise.all([
+    prisma.experiment.findMany({ where: { projectId }, orderBy: { key: 'asc' } }),
+    getProjectName(projectId),
+  ]);
   const analyses = await Promise.all(experiments.map((experiment) => analyzeExperimentRow(experiment)));
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div>
+      <PageBreadcrumb
+        items={[
+          { label: 'Projects', href: '/projects' },
+          { label: projectName, href: `/projects/${projectId}` },
+          { label: 'Dashboard' },
+        ]}
+      />
       <h1 className="text-2xl font-bold">Stats dashboard</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Visitor/conversion counts are unique users (deduplicated exposures, unique converting users) —

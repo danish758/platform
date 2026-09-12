@@ -1,13 +1,25 @@
 import { ContextKeysTable } from '@/components/ContextKeysTable';
 import { CreateContextKeyForm } from '@/components/CreateContextKeyForm';
+import { PageBreadcrumb } from '@/components/PageBreadcrumb';
 import { prisma } from '@/lib/db';
+import { getProjectName } from '@/lib/project-repo';
 
 export default async function ContextKeysPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const contextKeys = await prisma.contextKey.findMany({ where: { projectId: id }, orderBy: { key: 'asc' } });
+  const [contextKeys, projectName] = await Promise.all([
+    prisma.contextKey.findMany({ where: { projectId: id }, orderBy: { key: 'asc' } }),
+    getProjectName(id),
+  ]);
 
   return (
     <div>
+      <PageBreadcrumb
+        items={[
+          { label: 'Projects', href: '/projects' },
+          { label: projectName, href: `/projects/${id}` },
+          { label: 'Context keys' },
+        ]}
+      />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Context keys</h1>
         <CreateContextKeyForm projectId={id} />
