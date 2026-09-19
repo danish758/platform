@@ -12,16 +12,14 @@ export default async function NewExperimentPage({ params }: { params: Promise<{ 
 
   return (
     <div>
-      <div className="mx-auto max-w-2xl px-6 pt-8">
-        <PageBreadcrumb
-          items={[
-            { label: 'Projects', href: '/projects' },
-            { label: projectName, href: `/projects/${id}` },
-            { label: 'Experiments', href: `/projects/${id}/experiments` },
-            { label: 'New experiment' },
-          ]}
-        />
-      </div>
+      <PageBreadcrumb
+        items={[
+          { label: 'Projects', href: '/projects' },
+          { label: projectName, href: `/projects/${id}` },
+          { label: 'Experiments', href: `/projects/${id}/experiments` },
+          { label: 'New experiment' },
+        ]}
+      />
       <ExperimentWizard projectId={id} mode="create" contextKeys={contextKeys} />
     </div>
   );

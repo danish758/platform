@@ -50,24 +50,27 @@ export default async function EditExperimentPage({
 
   return (
     <div>
-      <div className="mx-auto max-w-2xl px-6 pt-8">
-        <PageBreadcrumb
-          items={[
-            { label: 'Projects', href: '/projects' },
-            { label: projectName, href: `/projects/${id}` },
-            { label: 'Experiments', href: `/projects/${id}/experiments` },
-            { label: row.name, href: `/projects/${id}/experiments/${key}` },
-            { label: 'Edit' },
-          ]}
-        />
-        <div className="mt-4 flex items-center justify-between">
-          <div className="flex gap-2">
+      <PageBreadcrumb
+        items={[
+          { label: 'Projects', href: '/projects' },
+          { label: projectName, href: `/projects/${id}` },
+          { label: 'Experiments', href: `/projects/${id}/experiments` },
+          { label: row.name, href: `/projects/${id}/experiments/${key}` },
+          { label: 'Edit' },
+        ]}
+      />
+      <ExperimentWizard
+        projectId={id}
+        mode="edit"
+        initial={initial}
+        contextKeys={contextKeys}
+        headerActions={
+          <>
             <RerandomizeButton projectId={id} experimentKey={key} currentSeed={config.seed ?? 0} />
             <DeleteExperimentButton projectId={id} experimentKey={key} />
-          </div>
-        </div>
-      </div>
-      <ExperimentWizard projectId={id} mode="edit" initial={initial} contextKeys={contextKeys} />
+          </>
+        }
+      />
     </div>
   );
 }
