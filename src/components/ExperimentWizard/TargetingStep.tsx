@@ -3,6 +3,7 @@
 import type { TargetingOperator } from '@cro-engine/assignment-engine';
 import { useFormContext } from 'react-hook-form';
 import { TagInput } from '@/components/TagInput';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { OPERATOR_LABELS, type ContextKeyType } from '@/lib/targeting-labels';
 import type { ContextKeySummary, ExperimentFormValues, TargetingRow } from './types';
@@ -34,9 +35,6 @@ export function TargetingStep({ contextKeys }: { contextKeys: ContextKeySummary[
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Optional. Rules are AND&apos;d together — everyone is eligible if you skip this step.
-      </p>
       {contextKeys.length === 0 && (
         <p className="rounded-md bg-warning/10 p-3 text-sm text-warning">
           No context keys yet — add one from the project page before creating targeting rules.
@@ -102,24 +100,21 @@ export function TargetingStep({ contextKeys }: { contextKeys: ContextKeySummary[
                 onChange={(nextValue) => updateRule(index, { ...rule, value: nextValue })}
               />
             </div>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => removeRule(rule.id)}
-              className="rounded-md px-2 py-2 text-sm text-destructive"
+              className="text-destructive hover:text-destructive"
             >
               Remove
-            </button>
+            </Button>
           </div>
         );
       })}
-      <button
-        type="button"
-        disabled={contextKeys.length === 0}
-        onClick={addRule}
-        className="text-sm font-medium text-foreground underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
-      >
+      <Button type="button" variant="outline" disabled={contextKeys.length === 0} onClick={addRule} className="w-full border-dashed">
         + Add targeting rule
-      </button>
+      </Button>
     </div>
   );
 }

@@ -2,12 +2,14 @@
 
 import { validateConfig, type ExperimentConfig } from '@cro-engine/assignment-engine';
 import { useRouter } from 'next/navigation';
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useApiRequest } from '@/hooks/useApiRequest';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { BasicsStep } from './BasicsStep';
 import { ReviewStep } from './ReviewStep';
-import { StepIndicator } from './StepIndicator';
+import { StepRail } from './StepRail';
 import { TargetingStep } from './TargetingStep';
 import type { ContextKeySummary, ExperimentFormValues, ExperimentInitialData } from './types';
 import { coerceTargetingRow, newId } from './utils';
@@ -16,7 +18,28 @@ import { WizardNav } from './WizardNav';
 
 export type { ExperimentInitialData };
 
-const STEPS = ['Basics', 'Variants', 'Targeting', 'Review'] as const;
+const STEPS = [
+  {
+    label: 'Basics',
+    description: 'Name, key, and description',
+    cardDescription: "Set the experiment's name, key, and how it's tracked.",
+  },
+  {
+    label: 'Variants',
+    description: 'Traffic split across variants',
+    cardDescription: 'Define the variants users will be bucketed into and their traffic split.',
+  },
+  {
+    label: 'Targeting',
+    description: 'Who is eligible to see this',
+    cardDescription: "Optional. Rules are AND'd together — everyone is eligible if you skip this step.",
+  },
+  {
+    label: 'Review',
+    description: 'Confirm and save',
+    cardDescription: 'Double-check everything below before saving.',
+  },
+] as const;
 
 function toDefaultValues(initial: ExperimentInitialData | undefined, mode: 'create' | 'edit'): ExperimentFormValues {
   const {
@@ -40,11 +63,13 @@ export function ExperimentWizard({
   mode,
   initial,
   contextKeys,
+  headerActions,
 }: {
   projectId: string;
   mode: 'create' | 'edit';
   initial?: ExperimentInitialData;
   contextKeys: ContextKeySummary[];
+  headerActions?: ReactNode;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -69,6 +94,10 @@ export function ExperimentWizard({
   // re-checks on submit, imported directly since assignment-engine is
   // dependency-free/isomorphic (works in the browser bundle for free).
   const liveErrors = validateConfig(clientConfig);
+
+  const cancelHref = mode === 'create'
+    ? `/projects/${projectId}/experiments`
+    : `/projects/${projectId}/experiments/${initialKey}`;
 
   async function onSubmit(values: ExperimentFormValues) {
     const payload = {
@@ -105,24 +134,45 @@ export function ExperimentWizard({
 
   return (
     <FormProvider {...form}>
-      <div className="mx-auto max-w-2xl px-6 py-16">
-        <StepIndicator steps={STEPS} currentStep={step} />
+      <div className="max-w-5xl">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">{mode === 'create' ? 'New experiment' : 'Edit experiment'}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Set up traffic split, targeting, and review before {mode === 'create' ? 'launch' : 'saving your changes'}.
+            </p>
+          </div>
+          {headerActions && <div className="flex gap-2">{headerActions}</div>}
+        </div>
 
-        {step === 0 && <BasicsStep mode={mode} />}
-        {step === 1 && <VariantsStep liveErrors={liveErrors} />}
-        {step === 2 && <TargetingStep contextKeys={contextKeys} />}
-        {step === 3 && <ReviewStep contextKeys={contextKeys} serverErrors={serverErrors} />}
+        <div className="flex gap-6">
+          <StepRail steps={STEPS} currentStep={step} />
 
-        <WizardNav
-          step={step}
-          totalSteps={STEPS.length}
-          onBack={() => setStep(Math.max(0, step - 1))}
-          onNext={() => setStep(step + 1)}
-          onSubmit={form.handleSubmit(onSubmit)}
-          nextDisabled={step === 0 && (!name || !key)}
-          submitDisabled={pending || liveErrors.length > 0}
-          submitLabel={pending ? 'Saving…' : mode === 'create' ? 'Create experiment' : 'Save changes'}
-        />
+          <Card className="flex-1">
+            <CardHeader>
+              <div className="text-sm font-semibold text-foreground">{STEPS[step].label}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{STEPS[step].cardDescription}</div>
+            </CardHeader>
+            <CardContent>
+              {step === 0 && <BasicsStep mode={mode} />}
+              {step === 1 && <VariantsStep liveErrors={liveErrors} />}
+              {step === 2 && <TargetingStep contextKeys={contextKeys} />}
+              {step === 3 && <ReviewStep contextKeys={contextKeys} serverErrors={serverErrors} />}
+
+              <WizardNav
+                step={step}
+                totalSteps={STEPS.length}
+                cancelHref={cancelHref}
+                onBack={() => setStep(Math.max(0, step - 1))}
+                onNext={() => setStep(step + 1)}
+                onSubmit={form.handleSubmit(onSubmit)}
+                nextDisabled={step === 0 && (!name || !key)}
+                submitDisabled={pending || liveErrors.length > 0}
+                submitLabel={pending ? 'Saving…' : mode === 'create' ? 'Create experiment' : 'Save changes'}
+              />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </FormProvider>
   );

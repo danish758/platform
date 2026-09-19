@@ -2,6 +2,7 @@
 
 import { useFormContext } from 'react-hook-form';
 import { VariantAllocationSliders } from '@/components/VariantAllocationSliders';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { equalSplit, rebalanceProportional } from '@/lib/variant-weights';
@@ -32,7 +33,6 @@ export function VariantsStep({ liveErrors }: { liveErrors: string[] }) {
       <p className="text-sm text-muted-foreground">
         Label is just for this dashboard; variant key is what the SDK actually sends.
       </p>
-
       <VariantAllocationSliders
         segments={variants.map((variant) => ({ id: variant.id, label: variant.label || variant.key || 'variant', weight: variant.weight }))}
         onChangeWeight={handleWeightChange}
@@ -58,19 +58,21 @@ export function VariantsStep({ liveErrors }: { liveErrors: string[] }) {
               className="font-mono"
             />
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => handleRemoveVariant(variant.id)}
             disabled={variants.length <= 2}
-            className="rounded-md px-2 py-2 text-sm text-destructive disabled:opacity-30"
+            className="text-destructive hover:text-destructive"
           >
             Remove
-          </button>
+          </Button>
         </div>
       ))}
-      <button type="button" onClick={handleAddVariant} className="text-sm font-medium text-foreground underline">
+      <Button type="button" variant="outline" onClick={handleAddVariant} className="w-full border-dashed">
         + Add variant
-      </button>
+      </Button>
 
       {liveErrors.length > 0 && (
         <div className="rounded-md bg-warning/10 p-3 text-sm text-warning">
