@@ -71,8 +71,8 @@ export const NewProjectDialog: FC = () => {
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <DialogFooter className="pt-2">
-            <Button type="submit" disabled={pending}>
-              {pending ? 'Creating…' : 'Create project'}
+            <Button type="submit" loading={pending}>
+              Create project
             </Button>
           </DialogFooter>
         </form>

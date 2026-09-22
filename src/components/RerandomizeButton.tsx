@@ -63,8 +63,8 @@ export function RerandomizeButton({
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
-          <AlertDialogAction disabled={pending} onClick={handleConfirm}>
-            {pending ? 'Re-randomizing…' : 'Force re-randomize'}
+          <AlertDialogAction loading={pending} onClick={handleConfirm}>
+            Force re-randomize
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

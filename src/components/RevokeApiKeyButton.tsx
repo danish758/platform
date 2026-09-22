@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 import { useApiRequest } from '@/hooks/useApiRequest';
 
 export function RevokeApiKeyButton({ projectId, keyId }: { projectId: string; keyId: string }) {
@@ -9,18 +10,20 @@ export function RevokeApiKeyButton({ projectId, keyId }: { projectId: string; ke
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <button
+      <Button
         type="button"
-        disabled={pending}
+        variant="link"
+        size="sm"
+        loading={pending}
         onClick={async () => {
           const body = await run(`/api/projects/${projectId}/api-keys/${keyId}`, { method: 'DELETE' }, 'Failed to revoke API key');
           if (!body) return;
           router.refresh();
         }}
-        className="text-xs font-medium text-destructive hover:underline disabled:opacity-60"
+        className="h-auto p-0 text-destructive"
       >
-        {pending ? 'Revoking…' : 'Revoke'}
-      </button>
+        Revoke
+      </Button>
       {error && <p className="max-w-xs text-right text-xs text-destructive">{error}</p>}
     </div>
   );

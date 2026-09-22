@@ -99,8 +99,8 @@ export function TargetingCard({
                     Cancel
                   </Button>
                 </DialogClose>
-                <Button type="button" size="lg" onClick={handleSave} disabled={pending}>
-                  {pending ? 'Saving…' : 'Save changes'}
+                <Button type="button" size="lg" onClick={handleSave} loading={pending}>
+                  Save changes
                 </Button>
               </DialogFooter>
             </DialogContent>

@@ -48,8 +48,8 @@ export default function LoginPage() {
           <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
-        <Button type="submit" disabled={submitting} className="w-full">
-          {submitting ? 'Logging in…' : 'Log in'}
+        <Button type="submit" loading={submitting} className="w-full">
+          Log in
         </Button>
       </form>
       <p className="mt-4 text-sm text-muted-foreground">

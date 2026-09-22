@@ -87,11 +87,12 @@ export const DeleteProjectDialog: FC<DeleteProjectDialogProps> = ({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            disabled={!canDelete || pending}
+            disabled={!canDelete}
+            loading={pending}
             onClick={handleDelete}
             className="bg-destructive text-white hover:bg-destructive/90"
           >
-            {pending ? 'Deleting…' : 'Delete project'}
+            Delete project
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

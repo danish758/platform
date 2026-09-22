@@ -55,8 +55,8 @@ export default function SignupPage() {
           <p className="mt-1 text-xs text-muted-foreground">At least 8 characters.</p>
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
-        <Button type="submit" disabled={submitting} className="w-full">
-          {submitting ? 'Creating account…' : 'Sign up'}
+        <Button type="submit" loading={submitting} className="w-full">
+          Sign up
         </Button>
       </form>
       <p className="mt-4 text-sm text-muted-foreground">

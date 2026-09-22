@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 import { useApiRequest } from '@/hooks/useApiRequest';
 
 export function DeleteContextKeyButton({ projectId, keyId, contextKey }: { projectId: string; keyId: string; contextKey: string }) {
@@ -9,9 +10,11 @@ export function DeleteContextKeyButton({ projectId, keyId, contextKey }: { proje
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <button
+      <Button
         type="button"
-        disabled={pending}
+        variant="link"
+        size="sm"
+        loading={pending}
         onClick={async () => {
           if (!confirm(`Delete context key "${contextKey}"?`)) return;
           const body = await run(
@@ -22,10 +25,10 @@ export function DeleteContextKeyButton({ projectId, keyId, contextKey }: { proje
           if (!body) return;
           router.refresh();
         }}
-        className="text-xs font-medium text-destructive hover:underline disabled:opacity-60"
+        className="h-auto p-0 text-destructive"
       >
-        {pending ? 'Deleting…' : 'Delete'}
-      </button>
+        Delete
+      </Button>
       {error && <p className="max-w-xs text-right text-xs text-destructive">{error}</p>}
     </div>
   );

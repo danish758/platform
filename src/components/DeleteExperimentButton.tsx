@@ -63,11 +63,11 @@ export function DeleteExperimentButton({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            disabled={pending}
+            loading={pending}
             onClick={handleConfirm}
             className="bg-destructive text-white hover:bg-destructive/90"
           >
-            {pending ? 'Deleting…' : 'Delete experiment'}
+            Delete experiment
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

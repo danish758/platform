@@ -63,8 +63,8 @@ export function CreateApiKeyForm({ projectId }: { projectId: string }) {
             {error && <p className="text-sm text-destructive">{error}</p>}
 
             <DialogFooter>
-              <Button type="submit" disabled={pending}>
-                {pending ? 'Creating…' : 'Create API key'}
+              <Button type="submit" loading={pending}>
+                Create API key
               </Button>
             </DialogFooter>
           </form>

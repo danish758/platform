@@ -127,8 +127,8 @@ export function VariantsCard({
                     Cancel
                   </Button>
                 </DialogClose>
-                <Button type="button" size="lg" onClick={handleSave} disabled={pending || liveErrors.length > 0}>
-                  {pending ? 'Saving…' : 'Save changes'}
+                <Button type="button" size="lg" onClick={handleSave} disabled={liveErrors.length > 0} loading={pending}>
+                  Save changes
                 </Button>
               </DialogFooter>
             </DialogContent>

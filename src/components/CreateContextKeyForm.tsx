@@ -73,8 +73,8 @@ export function CreateContextKeyForm({ projectId }: { projectId: string }) {
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <DialogFooter>
-            <Button type="submit" disabled={pending || !key || !label.trim()}>
-              {pending ? 'Creating…' : 'Create context key'}
+            <Button type="submit" disabled={!key || !label.trim()} loading={pending}>
+              Create context key
             </Button>
           </DialogFooter>
         </form>

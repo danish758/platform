@@ -125,8 +125,8 @@ export function BasicsCard({
                       Cancel
                     </Button>
                   </DialogClose>
-                  <Button type="submit" size="lg" disabled={pending || !nameDraft.trim()}>
-                    {pending ? 'Saving…' : 'Save changes'}
+                  <Button type="submit" size="lg" disabled={!nameDraft.trim()} loading={pending}>
+                    Save changes
                   </Button>
                 </DialogFooter>
               </form>

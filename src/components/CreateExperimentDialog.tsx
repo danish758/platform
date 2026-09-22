@@ -121,8 +121,8 @@ export function CreateExperimentDialog({ projectId }: { projectId: string }) {
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" size="lg" disabled={pending || !name.trim() || !key.trim()}>
-              {pending ? 'Creating…' : 'Create experiment'}
+            <Button type="submit" size="lg" disabled={!name.trim() || !key.trim()} loading={pending}>
+              Create experiment
             </Button>
           </DialogFooter>
         </form>
