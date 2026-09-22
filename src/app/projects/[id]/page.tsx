@@ -9,8 +9,8 @@ import { getExperimentsRequiringAttention } from '@/lib/experiment-attention';
 export default async function ProjectOverviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const project = await prisma.project.findUniqueOrThrow({ where: { id } });
-  const [experimentCount, apiKeyCount, contextKeyCount, attentionRows] = await Promise.all([
+  const [project, experimentCount, apiKeyCount, contextKeyCount, attentionRows] = await Promise.all([
+    prisma.project.findUniqueOrThrow({ where: { id } }),
     prisma.experiment.count({ where: { projectId: id } }),
     prisma.apiKey.count({ where: { projectId: id } }),
     prisma.contextKey.count({ where: { projectId: id } }),

@@ -12,18 +12,20 @@ export default async function ProjectLayout({
   children: React.ReactNode;
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  const account = await getCurrentAccount();
+  const [{ id }, account] = await Promise.all([params, getCurrentAccount()]);
   if (!account) return null;
 
-  const project = await requireOwnedProject(account.id, id);
+  // The sidebar list needs only the account, not the ownership check, so both
+  // queries go out together rather than chaining.
+  const [project, projects] = await Promise.all([
+    requireOwnedProject(account.id, id),
+    prisma.project.findMany({
+      where: { accountId: account.id },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+  ]);
   if (!project) notFound();
-
-  const projects = await prisma.project.findMany({
-    where: { accountId: account.id },
-    select: { id: true, name: true },
-    orderBy: { name: 'asc' },
-  });
 
   return (
     <div className="flex flex-1 overflow-hidden">
