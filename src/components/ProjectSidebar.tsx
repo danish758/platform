@@ -29,7 +29,7 @@ export const ProjectSidebar: FC<ProjectSidebarProps> = ({ projectId, projectName
   ];
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-sidebar px-3 py-4">
+    <aside className="flex w-60 shrink-0 flex-col overflow-y-auto border-r border-border bg-sidebar px-3 py-4">
       <ProjectSwitcher projects={projects} currentProjectId={projectId} currentProjectName={projectName} />
 
       <nav className="mt-6 flex flex-col gap-1">

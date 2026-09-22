@@ -6,12 +6,23 @@ import type { TargetingOperator } from '@cro-engine/assignment-engine';
  * themselves are unchanged.
  */
 export const OPERATOR_LABELS: Record<TargetingOperator, string> = {
-  eq: 'is',
-  neq: 'is not',
+  eq: 'is equal to',
+  neq: 'is not equal to',
   in: 'is one of',
   notIn: 'is not one of',
-  gt: 'greater than',
-  lt: 'less than',
+  gt: 'is greater than',
+  lt: 'is less than',
+};
+
+/** Compact symbol shown in the collapsed operator control — the full
+ * OPERATOR_LABELS text is what shows per-row in the picker's open list. */
+export const OPERATOR_SYMBOLS: Record<TargetingOperator, string> = {
+  eq: '=',
+  neq: '≠',
+  gt: '>',
+  lt: '<',
+  in: 'in',
+  notIn: 'not in',
 };
 
 export type ContextKeyType = 'string' | 'number';

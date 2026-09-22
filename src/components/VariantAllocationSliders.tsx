@@ -59,14 +59,14 @@ export function VariantAllocationSliders({
     <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
       <DonutChart segments={segments} />
 
-      <div className="flex-1 space-y-4">
+      <div className="flex-1 space-y-5">
         {segments.map((segment, index) => (
           <div key={segment.id}>
-            <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+            <div className="flex items-center gap-2 text-base font-medium text-foreground">
               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: colorFor(index) }} />
               <span className="truncate">{segment.label}</span>
             </div>
-            <div className="mt-1 flex items-center gap-3">
+            <div className="mt-2 flex items-center gap-3">
               <input
                 type="range"
                 min={0}
@@ -76,16 +76,16 @@ export function VariantAllocationSliders({
                 className={`h-2 flex-1 cursor-pointer appearance-none rounded-full ${THUMB_SHAPE_CLASSES} ${THUMB_COLOR_CLASSES[index % THUMB_COLOR_CLASSES.length]}`}
                 style={{ background: trackBackground(colorFor(index), segment.weight) }}
               />
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <Input
                   type="number"
                   min={0}
                   max={100}
                   value={segment.weight}
                   onChange={(e) => onChangeWeight(index, Number(e.target.value))}
-                  className="w-16 tabular-nums"
+                  className="h-11 w-20 text-base tabular-nums md:text-base"
                 />
-                <span className="text-sm text-muted-foreground">%</span>
+                <span className="text-base text-muted-foreground">%</span>
               </div>
             </div>
           </div>

@@ -23,7 +23,7 @@ export default async function ProjectsPage() {
   });
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-12">
+    <main className="mx-auto w-full max-w-5xl overflow-y-auto px-6 py-12">
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Projects</h1>
         <p className="mt-1 text-sm text-muted-foreground">

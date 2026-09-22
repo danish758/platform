@@ -1,21 +1,13 @@
 import { FC } from 'react';
-import type { TargetingOperator, TargetingRule } from '@cro-engine/assignment-engine';
-import { OPERATOR_LABELS } from '@/lib/targeting-labels';
 import { seriesColor } from '@/lib/series-colors';
 
 type Variant = { key: string; label: string; weight: number };
 
-type TrafficAllocationFlowProps = {
-  targeting: TargetingRule[];
-  labelByAttribute: Record<string, string>;
+type VariantSplitFlowProps = {
   variants: Variant[];
 };
 
-function formatRuleValue(value: TargetingRule['value']): string {
-  return Array.isArray(value) ? value.join(', ') : String(value);
-}
-
-export const TrafficAllocationFlow: FC<TrafficAllocationFlowProps> = ({ targeting, labelByAttribute, variants }) => {
+export const VariantSplitFlow: FC<VariantSplitFlowProps> = ({ variants }) => {
   const branchWidth = Math.max(280, variants.length * 140);
   const branchHeight = 54;
   const inset = 36;
@@ -27,28 +19,6 @@ export const TrafficAllocationFlow: FC<TrafficAllocationFlowProps> = ({ targetin
 
   return (
     <div className="flex flex-col items-stretch">
-      <div className="rounded-lg border border-border bg-secondary/60 p-4">
-        <div className="text-sm">
-          <span className="text-muted-foreground">Targeting</span>{' '}
-          {targeting.length === 0 ? (
-            <em className="not-italic font-semibold">Everyone</em>
-          ) : (
-            <span className="font-semibold">{targeting.length} rule{targeting.length > 1 ? 's' : ''}</span>
-          )}
-        </div>
-        {targeting.length > 0 && (
-          <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
-            {targeting.map((rule, index) => (
-              <li key={`${rule.attribute}-${index}`} className="font-mono text-xs">
-                {labelByAttribute[rule.attribute] ?? rule.attribute}{' '}
-                <span className="text-primary">{OPERATOR_LABELS[rule.operator as TargetingOperator]}</span>{' '}
-                {formatRuleValue(rule.value)}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
       <svg
         viewBox={`0 0 ${branchWidth} ${branchHeight}`}
         width="100%"

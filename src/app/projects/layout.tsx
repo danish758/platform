@@ -9,9 +9,9 @@ export default async function ProjectsLayout({ children }: { children: React.Rea
   if (!account) redirect('/login');
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col overflow-hidden">
       <TopBar accountEmail={account.email} />
-      <div className="flex flex-1">{children}</div>
+      <div className="flex flex-1 overflow-hidden">{children}</div>
     </div>
   );
 }
