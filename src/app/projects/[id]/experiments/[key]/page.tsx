@@ -1,17 +1,18 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ExperimentActionsMenu } from '@/components/ExperimentActionsMenu';
 import { ExperimentStatusControl } from '@/components/ExperimentStatusControl';
 import { PageBreadcrumb } from '@/components/PageBreadcrumb';
+import { BasicsCard } from '@/components/experiment-detail/BasicsCard';
 import { DailyExposuresChart } from '@/components/experiment-detail/DailyExposuresChart';
 import { DiagnosticsBanner } from '@/components/experiment-detail/DiagnosticsBanner';
 import { ObservedSplitBar } from '@/components/experiment-detail/ObservedSplitBar';
 import { StatRow } from '@/components/experiment-detail/StatRow';
-import { TrafficAllocationFlow } from '@/components/experiment-detail/TrafficAllocationFlow';
+import { TargetingCard } from '@/components/experiment-detail/TargetingCard';
+import { VariantsCard } from '@/components/experiment-detail/VariantsCard';
 import { StatusIndicator } from '@/components/stats/StatusIndicator';
 import { VariantResultsChart } from '@/components/stats/VariantResultsChart';
 import { VariantResultsTable } from '@/components/stats/VariantResultsTable';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getDailyExposureSeries } from '@/lib/daily-exposures';
 import { prisma } from '@/lib/db';
@@ -40,7 +41,7 @@ export default async function ExperimentDetailPage({
 
   const config = toConfig(row);
   const [contextKeys, projectName] = await Promise.all([
-    prisma.contextKey.findMany({ where: { projectId } }),
+    prisma.contextKey.findMany({ where: { projectId }, orderBy: { key: 'asc' } }),
     getProjectName(projectId),
   ]);
   const labelByAttribute = Object.fromEntries(contextKeys.map((contextKey) => [contextKey.key, contextKey.label || contextKey.key]));
@@ -89,9 +90,6 @@ export default async function ExperimentDetailPage({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" asChild>
-            <Link href={`/projects/${projectId}/experiments/${key}/edit`}>Edit</Link>
-          </Button>
           <ExperimentStatusControl
             variant="action"
             projectId={projectId}
@@ -99,6 +97,7 @@ export default async function ExperimentDetailPage({
             experimentName={row.name}
             status={row.status}
           />
+          <ExperimentActionsMenu projectId={projectId} experimentKey={key} currentSeed={config.seed ?? 0} />
         </div>
       </div>
 
@@ -109,41 +108,37 @@ export default async function ExperimentDetailPage({
         </TabsList>
 
         <TabsContent value="overview">
-          {row.description && (
-            <Card>
-              <CardContent>
-                <p className="mb-2 text-sm font-semibold">Description</p>
-                <p className="text-sm text-muted-foreground">{row.description}</p>
-              </CardContent>
-            </Card>
-          )}
+          <BasicsCard
+            projectId={projectId}
+            experimentKey={key}
+            name={row.name}
+            description={row.description ?? ''}
+            conversionEvent={row.conversionEvent ?? ''}
+          />
 
-          <Card>
-            <CardContent>
-              <p className="mb-1 text-sm font-semibold">Traffic Allocation</p>
-              <p className="mb-4 text-xs text-muted-foreground">
-                How visitors are targeted and split across variants
-              </p>
-              <TrafficAllocationFlow
-                targeting={config.targeting ?? []}
-                labelByAttribute={labelByAttribute}
-                variants={variants.map((variant) => ({
-                  key: variant.key,
-                  label: variant.label || variant.key,
-                  weight: variant.weight,
-                }))}
-              />
-            </CardContent>
-          </Card>
+          <TargetingCard
+            projectId={projectId}
+            experimentKey={key}
+            targeting={config.targeting ?? []}
+            contextKeys={contextKeys}
+            labelByAttribute={labelByAttribute}
+          />
+
+          <VariantsCard
+            projectId={projectId}
+            experimentKey={key}
+            status={row.status}
+            variants={variants.map((variant) => ({
+              key: variant.key,
+              label: variant.label || variant.key,
+              weight: variant.weight,
+            }))}
+          />
 
           <Card>
             <CardContent>
               <p className="mb-3 text-sm font-semibold">Experiment info</p>
               <dl className="divide-y divide-border text-sm">
-                <div className="flex justify-between py-2">
-                  <dt className="text-muted-foreground">Primary metric</dt>
-                  <dd className="font-mono">{row.conversionEvent || 'none (visitor counts only)'}</dd>
-                </div>
                 <div className="flex justify-between py-2">
                   <dt className="text-muted-foreground">Created</dt>
                   <dd className="font-mono tabular-nums">{row.createdAt.toISOString().slice(0, 10)}</dd>

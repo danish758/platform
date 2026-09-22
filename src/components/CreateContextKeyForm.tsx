@@ -63,7 +63,7 @@ export function CreateContextKeyForm({ projectId }: { projectId: string }) {
             <select
               value={type}
               onChange={(e) => setType(e.target.value as 'string' | 'number')}
-              className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="mt-1 flex h-9 w-full rounded-md border border-input bg-input-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="string">string</option>
               <option value="number">number</option>

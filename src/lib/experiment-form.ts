@@ -1,6 +1,9 @@
 import type { TargetingOperator } from '@cro-engine/assignment-engine';
 import { OPERATORS_BY_TYPE, type ContextKeyType } from '@/lib/targeting-labels';
-import type { ContextKeySummary, TargetingRow } from './types';
+
+export type VariantRow = { id: string; key: string; keyEdited: boolean; weight: number; label: string };
+export type TargetingRow = { id: string; attribute: string; operator: TargetingOperator; value: string[] };
+export type ContextKeySummary = { id: string; key: string; label: string | null; type: string };
 
 export function newId(): string {
   return crypto.randomUUID();

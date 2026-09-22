@@ -1,7 +1,7 @@
 'use client';
 
 import type { ExperimentStatus } from '@cro-engine/assignment-engine';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, Rocket } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { STATUS_DOT_CLASS, STATUS_VARIANTS } from '@/components/stats/StatusBadge';
@@ -95,7 +95,7 @@ export function ExperimentStatusControl({
           <AlertDialogAction
             disabled={pending}
             onClick={handleConfirmStop}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className="bg-destructive text-white hover:bg-destructive/90"
           >
             {pending ? 'Stopping…' : 'Stop experiment'}
           </AlertDialogAction>
@@ -155,8 +155,8 @@ export function ExperimentStatusControl({
 
   const { label, pendingLabel, next } = NEXT_ACTION[status];
   // Starting/restarting is constructive (primary, filled); stopping halts
-  // traffic, so it gets a quieter, cautionary outline instead of the same
-  // solid blue used for the positive action.
+  // traffic but isn't destructive to any data, so it gets a quieter
+  // primary-tinted outline instead of the same solid fill.
   const isStopping = next === 'stopped';
 
   return (
@@ -167,10 +167,19 @@ export function ExperimentStatusControl({
         onClick={() => requestStatus(next)}
         variant={isStopping ? 'outline' : 'default'}
         className={
-          isStopping ? 'border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive' : undefined
+          isStopping
+            ? 'border-primary/40 text-primary hover:bg-primary/10 hover:text-primary'
+            : 'bg-primary/85 hover:bg-primary/95'
         }
       >
-        {pending ? pendingLabel : label}
+        {pending ? (
+          pendingLabel
+        ) : (
+          <>
+            {status === 'draft' && <Rocket />}
+            {label}
+          </>
+        )}
       </Button>
       {error && <p className="max-w-xs text-right text-xs text-destructive">{error}</p>}
       {confirmDialog}

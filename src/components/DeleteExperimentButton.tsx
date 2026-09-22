@@ -1,33 +1,76 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { type MouseEvent } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useApiRequest } from '@/hooks/useApiRequest';
 
-export function DeleteExperimentButton({ projectId, experimentKey }: { projectId: string; experimentKey: string }) {
+export function DeleteExperimentButton({
+  projectId,
+  experimentKey,
+  open,
+  onOpenChange,
+}: {
+  projectId: string;
+  experimentKey: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const router = useRouter();
   const { run, pending, error } = useApiRequest();
 
+  async function handleConfirm(event: MouseEvent<HTMLButtonElement>) {
+    // Radix closes the dialog on any Action click by default — prevent that
+    // so the dialog stays open (showing pending/error state) until the
+    // request actually resolves.
+    event.preventDefault();
+    if (pending) return;
+
+    const body = await run(
+      `/api/projects/${projectId}/experiments/${experimentKey}`,
+      { method: 'DELETE' },
+      'Failed to delete experiment'
+    );
+    if (!body) return;
+
+    onOpenChange(false);
+    router.push(`/projects/${projectId}`);
+    router.refresh();
+  }
+
   return (
-    <div className="flex flex-col items-end gap-1">
-      <button
-        type="button"
-        disabled={pending}
-        onClick={async () => {
-          if (!confirm(`Delete "${experimentKey}"? Historical exposure/conversion data is kept, but this config is gone.`)) return;
-          const body = await run(
-            `/api/projects/${projectId}/experiments/${experimentKey}`,
-            { method: 'DELETE' },
-            'Failed to delete experiment'
-          );
-          if (!body) return;
-          router.push(`/projects/${projectId}`);
-          router.refresh();
-        }}
-        className="rounded-md border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20 disabled:opacity-60"
-      >
-        {pending ? 'Deleting…' : 'Delete experiment'}
-      </button>
-      {error && <p className="max-w-xs text-right text-xs text-destructive">{error}</p>}
-    </div>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete &quot;{experimentKey}&quot;?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Historical exposure/conversion data is kept, but this experiment&apos;s configuration is gone. This
+            cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        {error && <p className="text-sm text-destructive">{error}</p>}
+
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={pending}
+            onClick={handleConfirm}
+            className="bg-destructive text-white hover:bg-destructive/90"
+          >
+            {pending ? 'Deleting…' : 'Delete experiment'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

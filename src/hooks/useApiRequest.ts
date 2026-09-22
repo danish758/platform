@@ -9,6 +9,7 @@ type UseApiRequestResult = {
   pending: boolean;
   errors: string[];
   error: string | null;
+  clearErrors: () => void;
 };
 
 /**
@@ -41,5 +42,5 @@ export function useApiRequest(): UseApiRequestResult {
     return body as T;
   }
 
-  return { run, pending, errors, error: errors[0] ?? null };
+  return { run, pending, errors, error: errors[0] ?? null, clearErrors: () => setErrors([]) };
 }

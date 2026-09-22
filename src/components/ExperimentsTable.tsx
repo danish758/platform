@@ -4,9 +4,9 @@ import type { ExperimentStatus } from '@cro-engine/assignment-engine';
 import type { VariantProps } from 'class-variance-authority';
 import Link from 'next/link';
 import { FC, useMemo, useState } from 'react';
+import { CreateExperimentDialog } from '@/components/CreateExperimentDialog';
 import { ExperimentStatusControl } from '@/components/ExperimentStatusControl';
 import { Badge, type badgeVariants } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { ResultSummary } from '@/lib/stats-format';
@@ -62,9 +62,7 @@ export const ExperimentsTable: FC<ExperimentsTableProps> = ({ projectId, experim
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Experiments</h1>
-        <Button asChild>
-          <Link href={`/projects/${projectId}/experiments/new`}>New experiment</Link>
-        </Button>
+        <CreateExperimentDialog projectId={projectId} />
       </div>
 
       <div className="mt-6 flex items-center gap-6 border-b border-border">
