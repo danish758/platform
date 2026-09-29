@@ -3,7 +3,7 @@
 import { validateConfig, type ExperimentConfig } from '@cro-engine/assignment-engine';
 import { Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { VariantSplitFlow } from '@/components/experiment-detail/VariantSplitFlow';
 import { VariantsEditor } from '@/components/experiment-detail/VariantsEditor';
 import { Button } from '@/components/ui/button';
@@ -67,7 +67,8 @@ export function VariantsCard({
     variants: rows.map((row) => ({ key: row.key, weight: row.weight })),
   });
 
-  async function handleSave() {
+  async function handleSave(event: FormEvent) {
+    event.preventDefault();
     const body = await run(
       `/api/projects/${projectId}/experiments/${experimentKey}`,
       {
@@ -108,29 +109,31 @@ export function VariantsCard({
                 <DialogTitle className="text-2xl">Edit variants</DialogTitle>
               </DialogHeader>
 
-              <div className="flex-1 space-y-4 overflow-y-auto px-10 py-6">
-                <VariantsEditor
-                  variants={rows}
-                  onChange={setRows}
-                  onChangeWeight={handleChangeWeight}
-                  onAdd={handleAdd}
-                  onRemove={handleRemove}
-                  liveErrors={liveErrors}
-                />
+              <form onSubmit={handleSave} className="flex flex-1 flex-col overflow-hidden">
+                <div className="flex-1 space-y-4 overflow-y-auto px-10 py-6">
+                  <VariantsEditor
+                    variants={rows}
+                    onChange={setRows}
+                    onChangeWeight={handleChangeWeight}
+                    onAdd={handleAdd}
+                    onRemove={handleRemove}
+                    liveErrors={liveErrors}
+                  />
 
-                {error && <p className="text-sm text-destructive">{error}</p>}
-              </div>
+                  {error && <p className="text-sm text-destructive">{error}</p>}
+                </div>
 
-              <DialogFooter className="shrink-0 flex-row items-center justify-end gap-3 border-t border-border px-10 py-6">
-                <DialogClose asChild>
-                  <Button type="button" variant="ghost" size="lg">
-                    Cancel
+                <DialogFooter className="shrink-0 flex-row items-center justify-end gap-3 border-t border-border px-10 py-6">
+                  <DialogClose asChild>
+                    <Button type="button" variant="ghost" size="lg">
+                      Cancel
+                    </Button>
+                  </DialogClose>
+                  <Button type="submit" size="lg" disabled={liveErrors.length > 0} loading={pending}>
+                    Save changes
                   </Button>
-                </DialogClose>
-                <Button type="button" size="lg" onClick={handleSave} disabled={liveErrors.length > 0} loading={pending}>
-                  Save changes
-                </Button>
-              </DialogFooter>
+                </DialogFooter>
+              </form>
             </DialogContent>
           </Dialog>
         </div>

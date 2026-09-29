@@ -85,16 +85,16 @@ export function BasicsCard({
               <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
                 <div className="flex-1 space-y-6 overflow-y-auto px-10 py-6">
                   <div>
-                    <Label className="text-base">Name</Label>
+                    <Label>Name</Label>
                     <Input
                       value={nameDraft}
                       onChange={(e) => setNameDraft(e.target.value)}
                       autoFocus
-                      className="mt-2 h-12 text-base md:text-base"
+                      className="mt-2"
                     />
                   </div>
                   <div>
-                    <Label className="text-base">Description (optional)</Label>
+                    <Label>Description (optional)</Label>
                     <textarea
                       value={descriptionDraft}
                       onChange={(e) => setDescriptionDraft(e.target.value)}
@@ -103,11 +103,11 @@ export function BasicsCard({
                     />
                   </div>
                   <div>
-                    <Label className="text-base">Conversion event (optional)</Label>
+                    <Label>Conversion event (optional)</Label>
                     <Input
                       value={conversionEventDraft}
                       onChange={(e) => setConversionEventDraft(e.target.value)}
-                      className="mt-2 h-12 font-mono text-base md:text-base"
+                      className="mt-2 font-mono"
                       placeholder="e.g. purchase_completed"
                     />
                     <p className="mt-2 text-sm text-muted-foreground">

@@ -75,7 +75,7 @@ export function CreateExperimentDialog({ projectId }: { projectId: string }) {
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
           <div className="flex-1 space-y-6 overflow-y-auto px-10 py-6">
             <div>
-              <Label className="text-base">Name</Label>
+              <Label>Name</Label>
               <Input
                 value={name}
                 onChange={(e) => {
@@ -85,25 +85,25 @@ export function CreateExperimentDialog({ projectId }: { projectId: string }) {
                 }}
                 placeholder="e.g. Homepage CTA copy"
                 autoFocus
-                className="mt-2 h-12 text-base md:text-base"
+                className="mt-2"
               />
             </div>
             <div>
-              <Label className="text-base">Key</Label>
+              <Label>Key</Label>
               <Input
                 value={key}
                 onChange={(e) => {
                   setKey(e.target.value);
                   setKeyEdited(true);
                 }}
-                className="mt-2 h-12 font-mono text-base md:text-base"
+                className="mt-2 font-mono"
               />
               <p className="mt-2 text-sm text-muted-foreground">
                 Used by the SDK to look up this experiment. Lowercase, hyphens only.
               </p>
             </div>
             <div>
-              <Label className="text-base">Description (optional)</Label>
+              <Label>Description (optional)</Label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}

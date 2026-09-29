@@ -3,7 +3,7 @@
 import type { TargetingOperator, TargetingRule } from '@cro-engine/assignment-engine';
 import { Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { TargetingRulesEditor } from '@/components/experiment-detail/TargetingRulesEditor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -48,7 +48,8 @@ export function TargetingCard({
     if (next) setRows(toRows(targeting));
   }
 
-  async function handleSave() {
+  async function handleSave(event: FormEvent) {
+    event.preventDefault();
     const body = await run(
       `/api/projects/${projectId}/experiments/${experimentKey}`,
       {
@@ -87,22 +88,24 @@ export function TargetingCard({
                 <DialogTitle className="text-2xl">Edit targeting</DialogTitle>
               </DialogHeader>
 
-              <div className="flex-1 space-y-4 overflow-y-auto px-10 py-6">
-                <TargetingRulesEditor rows={rows} onChange={setRows} contextKeys={contextKeys} />
+              <form onSubmit={handleSave} className="flex flex-1 flex-col overflow-hidden">
+                <div className="flex-1 space-y-4 overflow-y-auto px-10 py-6">
+                  <TargetingRulesEditor rows={rows} onChange={setRows} contextKeys={contextKeys} />
 
-                {error && <p className="text-sm text-destructive">{error}</p>}
-              </div>
+                  {error && <p className="text-sm text-destructive">{error}</p>}
+                </div>
 
-              <DialogFooter className="shrink-0 flex-row items-center justify-end gap-3 border-t border-border px-10 py-6">
-                <DialogClose asChild>
-                  <Button type="button" variant="ghost" size="lg">
-                    Cancel
+                <DialogFooter className="shrink-0 flex-row items-center justify-end gap-3 border-t border-border px-10 py-6">
+                  <DialogClose asChild>
+                    <Button type="button" variant="ghost" size="lg">
+                      Cancel
+                    </Button>
+                  </DialogClose>
+                  <Button type="submit" size="lg" loading={pending}>
+                    Save changes
                   </Button>
-                </DialogClose>
-                <Button type="button" size="lg" onClick={handleSave} loading={pending}>
-                  Save changes
-                </Button>
-              </DialogFooter>
+                </DialogFooter>
+              </form>
             </DialogContent>
           </Dialog>
         </div>
