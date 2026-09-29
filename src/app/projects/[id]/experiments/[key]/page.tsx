@@ -101,7 +101,7 @@ export default async function ExperimentDetailPage({
             projectId={projectId}
             experimentKey={key}
             currentSeed={config.seed ?? 0}
-            redirectOnDeleteTo={`/projects/${projectId}`}
+            redirectOnDeleteTo={`/projects/${projectId}/experiments`}
           />
         </div>
       </div>
