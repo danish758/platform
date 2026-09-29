@@ -100,6 +100,7 @@ export default async function ExperimentDetailPage({
           <ExperimentActionsMenu
             projectId={projectId}
             experimentKey={key}
+            status={row.status}
             currentSeed={config.seed ?? 0}
             redirectOnDeleteTo={`/projects/${projectId}/experiments`}
           />
@@ -124,6 +125,7 @@ export default async function ExperimentDetailPage({
           <TargetingCard
             projectId={projectId}
             experimentKey={key}
+            status={row.status}
             targeting={config.targeting ?? []}
             contextKeys={contextKeys}
             labelByAttribute={labelByAttribute}

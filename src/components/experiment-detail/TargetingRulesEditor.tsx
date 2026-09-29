@@ -15,6 +15,7 @@ import {
   type TargetingRow,
 } from '@/lib/experiment-form';
 import { type ContextKeyType } from '@/lib/targeting-labels';
+import { TARGETING_RULES_MAX, TARGETING_VALUE_MAX } from '@/lib/validation/limits';
 
 export function TargetingRulesEditor({
   rows,
@@ -36,6 +37,8 @@ export function TargetingRulesEditor({
   function removeRule(ruleId: string) {
     onChange(rows.filter((rule) => rule.id !== ruleId));
   }
+
+  const atRuleLimit = rows.length >= TARGETING_RULES_MAX;
 
   function addRule() {
     const firstKey = contextKeys[0];
@@ -103,6 +106,7 @@ export function TargetingRulesEditor({
                 values={rule.value}
                 type={keyType}
                 max={maxValuesForOperator(rule.operator)}
+                maxLength={TARGETING_VALUE_MAX}
                 onChange={(nextValue) => updateRule(index, { ...rule, value: nextValue })}
               />
             </div>
@@ -121,16 +125,21 @@ export function TargetingRulesEditor({
           </div>
         );
       })}
-      <Button
-        type="button"
-        variant="ghost"
-        disabled={contextKeys.length === 0}
-        onClick={addRule}
-        className="h-auto gap-2 px-1 text-base font-medium text-primary hover:bg-transparent hover:text-primary/80"
-      >
-        <Plus className="h-5 w-5" />
-        Add targeting rule
-      </Button>
+      <div className="flex items-center gap-3">
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={contextKeys.length === 0 || atRuleLimit}
+          onClick={addRule}
+          className="h-auto gap-2 px-1 text-base font-medium text-primary hover:bg-transparent hover:text-primary/80"
+        >
+          <Plus className="h-5 w-5" />
+          Add targeting rule
+        </Button>
+        {atRuleLimit && (
+          <span className="text-sm text-muted-foreground">Up to {TARGETING_RULES_MAX} rules per experiment.</span>
+        )}
+      </div>
     </div>
   );
 }

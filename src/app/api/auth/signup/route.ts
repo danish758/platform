@@ -4,20 +4,14 @@ import { prisma } from '@/lib/db';
 import { HTTP_STATUS } from '@/lib/http-status';
 import { hashPassword } from '@/lib/password';
 import { createSession, SESSION_COOKIE } from '@/lib/session';
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { signupSchema } from '@/lib/validation/auth';
+import { parseJsonBody } from '@/lib/validation/parse';
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const body = (await request.json().catch(() => null)) as { email?: string; password?: string } | null;
-  const { email: rawEmail = '', password } = body || {};
-  const email = rawEmail.trim().toLowerCase();
-
-  if (!email || !EMAIL_RE.test(email)) {
-    return NextResponse.json({ error: 'A valid email is required' }, { status: HTTP_STATUS.BAD_REQUEST });
-  }
-  if (!password || password.length < 8) {
-    return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: HTTP_STATUS.BAD_REQUEST });
-  }
+  const parsed = await parseJsonBody(request, signupSchema);
+  // The signup page renders a single `error` string, not an `errors` list.
+  if (!parsed.success) return NextResponse.json({ error: parsed.errors[0] }, { status: HTTP_STATUS.BAD_REQUEST });
+  const { email, password } = parsed.data;
 
   const existing = await prisma.account.findUnique({ where: { email } });
   if (existing) {

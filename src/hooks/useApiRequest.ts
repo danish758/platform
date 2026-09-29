@@ -4,8 +4,12 @@ import { useState } from 'react';
 
 type ApiErrorBody = { errors?: string[]; error?: string };
 
+/** Claims the errors it can show elsewhere (e.g. under a form field) and
+ * returns the rest, which become this hook's `errors`. */
+type ErrorHandler = (errors: string[]) => string[];
+
 type UseApiRequestResult = {
-  run: <T = unknown>(input: RequestInfo, init: RequestInit, fallbackError: string) => Promise<T | null>;
+  run: <T = unknown>(input: RequestInfo, init: RequestInit, fallbackError: string, onErrors?: ErrorHandler) => Promise<T | null>;
   pending: boolean;
   errors: string[];
   error: string | null;
@@ -24,7 +28,12 @@ export function useApiRequest(): UseApiRequestResult {
   const [pending, setPending] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
-  async function run<T = unknown>(input: RequestInfo, init: RequestInit, fallbackError: string): Promise<T | null> {
+  async function run<T = unknown>(
+    input: RequestInfo,
+    init: RequestInit,
+    fallbackError: string,
+    onErrors: ErrorHandler = (unhandled) => unhandled
+  ): Promise<T | null> {
     setPending(true);
     setErrors([]);
 
@@ -33,7 +42,7 @@ export function useApiRequest(): UseApiRequestResult {
 
     if (!res.ok) {
       const { errors: bodyErrors = [], error: bodyError } = body as ApiErrorBody;
-      setErrors(bodyErrors.length > 0 ? bodyErrors : [bodyError ?? fallbackError]);
+      setErrors(onErrors(bodyErrors.length > 0 ? bodyErrors : [bodyError ?? fallbackError]));
       setPending(false);
       return null;
     }

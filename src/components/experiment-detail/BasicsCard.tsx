@@ -2,13 +2,23 @@
 
 import { Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useApiRequest } from '@/hooks/useApiRequest';
+import { useZodForm } from '@/hooks/useZodForm';
+import { updateExperimentSchema } from '@/lib/validation/experiment';
+import { CONVERSION_EVENT_MAX, DESCRIPTION_MAX, EXPERIMENT_NAME_MAX } from '@/lib/validation/limits';
+
+// The PATCH route treats an absent name as "unchanged"; this form always
+// sends one, so here it's required.
+const formSchema = updateExperimentSchema
+  .pick({ name: true, description: true, conversionEvent: true })
+  .required({ name: true });
 
 export function BasicsCard({
   projectId,
@@ -25,38 +35,34 @@ export function BasicsCard({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [nameDraft, setNameDraft] = useState(name);
-  const [descriptionDraft, setDescriptionDraft] = useState(description);
-  const [conversionEventDraft, setConversionEventDraft] = useState(conversionEvent);
-  const { run, pending, error } = useApiRequest();
+  const { register, handleSubmit, reset, watch, formState, assignServerErrors } = useZodForm(formSchema, {
+    defaultValues: { name, description, conversionEvent },
+  });
+  const { errors } = formState;
+  const { run, pending, error, clearErrors } = useApiRequest();
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
     if (next) {
       // Re-seed from the current server values every time the dialog opens —
       // Radix doesn't unmount on close, so without this a discarded edit
-      // from a previous open would still be sitting in local state.
-      setNameDraft(name);
-      setDescriptionDraft(description);
-      setConversionEventDraft(conversionEvent);
+      // from a previous open would still be sitting in the form.
+      reset({ name, description, conversionEvent });
+      clearErrors();
     }
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  const onSubmit = handleSubmit(async (values) => {
     const body = await run(
       `/api/projects/${projectId}/experiments/${experimentKey}`,
-      {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: nameDraft, description: descriptionDraft, conversionEvent: conversionEventDraft }),
-      },
-      'Failed to save changes'
+      { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) },
+      'Failed to save changes',
+      assignServerErrors
     );
     if (!body) return;
     setOpen(false);
     router.refresh();
-  }
+  });
 
   return (
     <Card>
@@ -82,39 +88,45 @@ export function BasicsCard({
                 <DialogTitle className="text-2xl">Edit basics</DialogTitle>
               </DialogHeader>
 
-              <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+              <form onSubmit={onSubmit} noValidate className="flex flex-1 flex-col overflow-hidden">
                 <div className="flex-1 space-y-6 overflow-y-auto px-10 py-6">
-                  <div>
-                    <Label>Name</Label>
+                  <FormField
+                    id="edit-experiment-name"
+                    label="Name"
+                    error={errors.name}
+                    counter={{ value: watch('name'), max: EXPERIMENT_NAME_MAX }}
+                  >
+                    <Input {...register('name')} autoFocus className="mt-2" />
+                  </FormField>
+                  <FormField
+                    id="edit-experiment-description"
+                    label="Description"
+                    optional
+                    error={errors.description}
+                    counter={{ value: watch('description') ?? '', max: DESCRIPTION_MAX }}
+                  >
+                    <Textarea {...register('description')} className="mt-2" rows={3} />
+                  </FormField>
+                  <FormField
+                    id="edit-experiment-conversion-event"
+                    label="Conversion event"
+                    optional
+                    error={errors.conversionEvent}
+                    counter={{ value: watch('conversionEvent') ?? '', max: CONVERSION_EVENT_MAX }}
+                    help={
+                      <>
+                        The event name your app sends via <code>client.trackConversion()</code> for this
+                        experiment&apos;s goal. Lowercase letters, numbers, &quot;_&quot;, &quot;.&quot; and
+                        &quot;-&quot;. Leave blank to only track visitor counts.
+                      </>
+                    }
+                  >
                     <Input
-                      value={nameDraft}
-                      onChange={(e) => setNameDraft(e.target.value)}
-                      autoFocus
-                      className="mt-2"
-                    />
-                  </div>
-                  <div>
-                    <Label>Description (optional)</Label>
-                    <textarea
-                      value={descriptionDraft}
-                      onChange={(e) => setDescriptionDraft(e.target.value)}
-                      className="mt-2 w-full rounded-md border border-input bg-input-background px-3 py-3 text-base shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                      rows={3}
-                    />
-                  </div>
-                  <div>
-                    <Label>Conversion event (optional)</Label>
-                    <Input
-                      value={conversionEventDraft}
-                      onChange={(e) => setConversionEventDraft(e.target.value)}
+                      {...register('conversionEvent')}
                       className="mt-2 font-mono"
                       placeholder="e.g. purchase_completed"
                     />
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      The event name your app sends via <code>client.trackConversion()</code> for this
-                      experiment&apos;s goal. Leave blank to only track visitor counts.
-                    </p>
-                  </div>
+                  </FormField>
 
                   {error && <p className="text-sm text-destructive">{error}</p>}
                 </div>
@@ -125,7 +137,7 @@ export function BasicsCard({
                       Cancel
                     </Button>
                   </DialogClose>
-                  <Button type="submit" size="lg" disabled={!nameDraft.trim()} loading={pending}>
+                  <Button type="submit" size="lg" loading={pending}>
                     Save changes
                   </Button>
                 </DialogFooter>

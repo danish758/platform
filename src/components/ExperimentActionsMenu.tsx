@@ -1,5 +1,6 @@
 'use client';
 
+import type { ExperimentStatus } from '@cro-engine/assignment-engine';
 import { MoreVertical } from 'lucide-react';
 import { useState } from 'react';
 import { DeleteExperimentButton } from '@/components/DeleteExperimentButton';
@@ -12,17 +13,20 @@ type ActiveDialog = 'rerandomize' | 'delete' | null;
 export function ExperimentActionsMenu({
   projectId,
   experimentKey,
+  status,
   currentSeed,
   redirectOnDeleteTo,
 }: {
   projectId: string;
   experimentKey: string;
+  status: ExperimentStatus;
   currentSeed: number;
   /** Where to navigate after a successful delete — omit to stay on the current page and just refresh (e.g. a table row). */
   redirectOnDeleteTo?: string;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeDialog, setActiveDialog] = useState<ActiveDialog>(null);
+  const isRunning = status === 'running';
 
   return (
     <>
@@ -33,15 +37,18 @@ export function ExperimentActionsMenu({
           </Button>
         </PopoverTrigger>
         <PopoverContent align="end" className="w-56 border-border bg-popover p-1.5">
+          {/* Re-seeding reshuffles every visitor's bucket, so it's locked mid-run like variants and targeting. */}
           <button
             type="button"
+            disabled={isRunning}
             onClick={() => {
               setMenuOpen(false);
               setActiveDialog('rerandomize');
             }}
-            className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-secondary"
+            className="flex w-full flex-col items-start rounded-md px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:hover:bg-transparent"
           >
-            Force re-randomize
+            <span className={isRunning ? 'text-muted-foreground' : undefined}>Force re-randomize</span>
+            {isRunning && <span className="text-xs text-muted-foreground">Stop the experiment first</span>}
           </button>
           <div className="my-1 h-px bg-border" />
           <button

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { requireApiKeyProject } from '@/lib/api-key';
 import { prisma } from '@/lib/db';
+import { getVariantKeysByExperiment } from '@/lib/experiment-repo';
 import { HTTP_STATUS } from '@/lib/http-status';
-
-type ExposureEvent = { userId: string; experimentKey: string; variantKey: string };
-type ConversionEvent = { userId: string; eventName: string; value?: number };
+import { isUniqueConstraintError } from '@/lib/prisma-errors';
+import { eventsBatchSchema, partitionEvents, type ExposureEvent } from '@/lib/validation/events';
+import { parseJsonBody } from '@/lib/validation/parse';
 
 /**
  * Deduplicated per (projectId, userId, experimentKey), same rule v1 had —
@@ -29,8 +30,7 @@ async function logExposure(projectId: string, event: ExposureEvent): Promise<voi
       data: { projectId, userId: event.userId, experimentKey: event.experimentKey, variantKey: event.variantKey },
     });
   } catch (err: unknown) {
-    const isUniqueConstraintError = typeof err === 'object' && err !== null && 'code' in err && err.code === 'P2002';
-    if (!isUniqueConstraintError) throw err;
+    if (!isUniqueConstraintError(err)) throw err;
   }
 }
 
@@ -42,12 +42,11 @@ export async function POST(request: Request): Promise<NextResponse> {
   const projectId = await requireApiKeyProject(request);
   if (!projectId) return NextResponse.json({ error: 'Invalid or missing API key' }, { status: HTTP_STATUS.UNAUTHORIZED });
 
-  const body = (await request.json().catch(() => null)) as {
-    exposures?: ExposureEvent[];
-    conversions?: ConversionEvent[];
-  } | null;
-
-  const { exposures = [], conversions = [] } = body || {};
+  const parsed = await parseJsonBody(request, eventsBatchSchema);
+  if (!parsed.success) return NextResponse.json({ errors: parsed.errors }, { status: HTTP_STATUS.BAD_REQUEST });
+  const variantKeysByExperiment =
+    parsed.data.exposures.length > 0 ? await getVariantKeysByExperiment(projectId) : new Map<string, Set<string>>();
+  const { exposures, conversions, rejected } = partitionEvents(parsed.data, variantKeysByExperiment);
 
   await Promise.all(exposures.map((exposure) => logExposure(projectId, exposure)));
 
@@ -62,5 +61,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+    accepted: { exposures: exposures.length, conversions: conversions.length },
+    rejected,
+  });
 }

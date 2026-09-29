@@ -1,9 +1,10 @@
 'use client';
 
-import type { TargetingOperator, TargetingRule } from '@cro-engine/assignment-engine';
+import type { ExperimentStatus, TargetingOperator, TargetingRule } from '@cro-engine/assignment-engine';
 import { Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+import { LockedWhileRunning } from '@/components/experiment-detail/LockedWhileRunning';
 import { TargetingRulesEditor } from '@/components/experiment-detail/TargetingRulesEditor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,12 +29,14 @@ function toRows(rules: TargetingRule[]): TargetingRow[] {
 export function TargetingCard({
   projectId,
   experimentKey,
+  status,
   targeting,
   contextKeys,
   labelByAttribute,
 }: {
   projectId: string;
   experimentKey: string;
+  status: ExperimentStatus;
   targeting: TargetingRule[];
   contextKeys: ContextKeySummary[];
   labelByAttribute: Record<string, string>;
@@ -72,42 +75,46 @@ export function TargetingCard({
             <p className="mb-1 text-sm font-semibold">Targeting</p>
             <p className="mb-4 text-xs text-muted-foreground">Who is eligible to see this experiment.</p>
           </div>
-          <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" aria-label="Edit targeting">
-                <Pencil />
-              </Button>
-            </DialogTrigger>
-            <DialogContent
-              className="flex h-[600px] max-h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden border-border bg-card p-0"
-              showCloseButton={false}
-              onPointerDownOutside={(e) => e.preventDefault()}
-              onEscapeKeyDown={(e) => e.preventDefault()}
-            >
-              <DialogHeader className="shrink-0 border-b border-border px-10 py-6">
-                <DialogTitle className="text-2xl">Edit targeting</DialogTitle>
-              </DialogHeader>
+          {status === 'running' ? (
+            <LockedWhileRunning />
+          ) : (
+            <Dialog open={open} onOpenChange={handleOpenChange}>
+              <DialogTrigger asChild>
+                <Button type="button" variant="ghost" size="icon" aria-label="Edit targeting">
+                  <Pencil />
+                </Button>
+              </DialogTrigger>
+              <DialogContent
+                className="flex h-[600px] max-h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden border-border bg-card p-0"
+                showCloseButton={false}
+                onPointerDownOutside={(e) => e.preventDefault()}
+                onEscapeKeyDown={(e) => e.preventDefault()}
+              >
+                <DialogHeader className="shrink-0 border-b border-border px-10 py-6">
+                  <DialogTitle className="text-2xl">Edit targeting</DialogTitle>
+                </DialogHeader>
 
-              <form onSubmit={handleSave} className="flex flex-1 flex-col overflow-hidden">
-                <div className="flex-1 space-y-4 overflow-y-auto px-10 py-6">
-                  <TargetingRulesEditor rows={rows} onChange={setRows} contextKeys={contextKeys} />
+                <form onSubmit={handleSave} className="flex flex-1 flex-col overflow-hidden">
+                  <div className="flex-1 space-y-4 overflow-y-auto px-10 py-6">
+                    <TargetingRulesEditor rows={rows} onChange={setRows} contextKeys={contextKeys} />
 
-                  {error && <p className="text-sm text-destructive">{error}</p>}
-                </div>
+                    {error && <p className="text-sm text-destructive">{error}</p>}
+                  </div>
 
-                <DialogFooter className="shrink-0 flex-row items-center justify-end gap-3 border-t border-border px-10 py-6">
-                  <DialogClose asChild>
-                    <Button type="button" variant="ghost" size="lg">
-                      Cancel
+                  <DialogFooter className="shrink-0 flex-row items-center justify-end gap-3 border-t border-border px-10 py-6">
+                    <DialogClose asChild>
+                      <Button type="button" variant="ghost" size="lg">
+                        Cancel
+                      </Button>
+                    </DialogClose>
+                    <Button type="submit" size="lg" loading={pending}>
+                      Save changes
                     </Button>
-                  </DialogClose>
-                  <Button type="submit" size="lg" loading={pending}>
-                    Save changes
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         <div className="rounded-lg border border-border bg-secondary/60 p-4">
