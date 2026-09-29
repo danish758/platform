@@ -97,7 +97,12 @@ export default async function ExperimentDetailPage({
             experimentName={row.name}
             status={row.status}
           />
-          <ExperimentActionsMenu projectId={projectId} experimentKey={key} currentSeed={config.seed ?? 0} />
+          <ExperimentActionsMenu
+            projectId={projectId}
+            experimentKey={key}
+            currentSeed={config.seed ?? 0}
+            redirectOnDeleteTo={`/projects/${projectId}`}
+          />
         </div>
       </div>
 

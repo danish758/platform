@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, useMemo, useState } from 'react';
-import { DeleteContextKeyButton } from '@/components/DeleteContextKeyButton';
+import { ContextKeyActionsMenu } from '@/components/ContextKeyActionsMenu';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -58,7 +58,7 @@ export const ContextKeysTable: FC<ContextKeysTableProps> = ({ projectId, context
                   <Badge variant="outline">{contextKey.type}</Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <DeleteContextKeyButton projectId={projectId} keyId={contextKey.id} contextKey={contextKey.key} />
+                  <ContextKeyActionsMenu projectId={projectId} keyId={contextKey.id} contextKey={contextKey.key} />
                 </TableCell>
               </TableRow>
             ))}

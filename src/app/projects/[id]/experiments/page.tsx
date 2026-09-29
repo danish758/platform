@@ -24,6 +24,7 @@ export default async function ExperimentsPage({ params }: { params: Promise<{ id
       conversionEvent: experiment.conversionEvent,
       createdAt: experiment.createdAt.toISOString(),
       result: summarizeResult(analyses[index], baselineKey),
+      seed: experiment.seed ?? 0,
     };
   });
 

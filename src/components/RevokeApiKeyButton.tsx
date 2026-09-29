@@ -1,30 +1,67 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import { type MouseEvent } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useApiRequest } from '@/hooks/useApiRequest';
 
-export function RevokeApiKeyButton({ projectId, keyId }: { projectId: string; keyId: string }) {
+export function RevokeApiKeyButton({
+  projectId,
+  keyId,
+  open,
+  onOpenChange,
+}: {
+  projectId: string;
+  keyId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const router = useRouter();
   const { run, pending, error } = useApiRequest();
 
+  async function handleConfirm(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    if (pending) return;
+
+    const body = await run(`/api/projects/${projectId}/api-keys/${keyId}`, { method: 'DELETE' }, 'Failed to revoke API key');
+    if (!body) return;
+
+    onOpenChange(false);
+    router.refresh();
+  }
+
   return (
-    <div className="flex flex-col items-end gap-1">
-      <Button
-        type="button"
-        variant="link"
-        size="sm"
-        loading={pending}
-        onClick={async () => {
-          const body = await run(`/api/projects/${projectId}/api-keys/${keyId}`, { method: 'DELETE' }, 'Failed to revoke API key');
-          if (!body) return;
-          router.refresh();
-        }}
-        className="h-auto p-0 text-destructive"
-      >
-        Revoke
-      </Button>
-      {error && <p className="max-w-xs text-right text-xs text-destructive">{error}</p>}
-    </div>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Revoke this API key?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Requests using this key will be rejected immediately. This cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        {error && <p className="text-sm text-destructive">{error}</p>}
+
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            loading={pending}
+            onClick={handleConfirm}
+            className="bg-destructive text-white hover:bg-destructive/90"
+          >
+            Revoke key
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

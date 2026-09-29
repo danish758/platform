@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, useMemo, useState } from 'react';
-import { RevokeApiKeyButton } from '@/components/RevokeApiKeyButton';
+import { ApiKeyActionsMenu } from '@/components/ApiKeyActionsMenu';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -88,7 +88,7 @@ export const ApiKeysTable: FC<ApiKeysTableProps> = ({ projectId, apiKeys }) => {
                   {key.revokedAt ? key.revokedAt.slice(0, 10) : '—'}
                 </TableCell>
                 <TableCell className="text-right">
-                  {!key.revokedAt && <RevokeApiKeyButton projectId={projectId} keyId={key.id} />}
+                  {!key.revokedAt && <ApiKeyActionsMenu projectId={projectId} keyId={key.id} />}
                 </TableCell>
               </TableRow>
             ))}

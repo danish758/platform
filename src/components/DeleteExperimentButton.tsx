@@ -19,11 +19,14 @@ export function DeleteExperimentButton({
   experimentKey,
   open,
   onOpenChange,
+  redirectTo,
 }: {
   projectId: string;
   experimentKey: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Where to navigate after a successful delete — omit to stay on the current page and just refresh (e.g. deleting a row from a list). */
+  redirectTo?: string;
 }) {
   const router = useRouter();
   const { run, pending, error } = useApiRequest();
@@ -43,7 +46,7 @@ export function DeleteExperimentButton({
     if (!body) return;
 
     onOpenChange(false);
-    router.push(`/projects/${projectId}`);
+    if (redirectTo) router.push(redirectTo);
     router.refresh();
   }
 
