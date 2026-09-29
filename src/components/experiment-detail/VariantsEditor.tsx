@@ -41,7 +41,7 @@ export function VariantsEditor({
       {variants.map((variant, index) => (
         <div key={variant.id} className="flex items-end gap-3">
           <div className="flex-1">
-            <Label className="text-base">Label</Label>
+            <Label>Label</Label>
             <Input
               value={variant.label}
               onChange={(e) => {
@@ -49,19 +49,19 @@ export function VariantsEditor({
                 updateVariant(index, variant.keyEdited ? { label } : { label, key: slugify(label) });
               }}
               placeholder="e.g. Green button"
-              className="mt-2 h-12 text-base md:text-base"
+              className="mt-2"
             />
           </div>
           <div className="flex-1">
-            <Label className="text-base">Variant key</Label>
+            <Label>Variant key</Label>
             <Input
               value={variant.key}
               onChange={(e) => updateVariant(index, { key: e.target.value, keyEdited: true })}
-              className="mt-2 h-12 font-mono text-base md:text-base"
+              className="mt-2 font-mono"
             />
           </div>
           <div>
-            <Label className="invisible text-base">Remove</Label>
+            <Label className="invisible">Remove</Label>
             <Button
               type="button"
               variant="ghost"

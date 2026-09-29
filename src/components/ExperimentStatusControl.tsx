@@ -21,10 +21,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useApiRequest } from '@/hooks/useApiRequest';
 import { cn } from '@/lib/utils';
 
-const NEXT_ACTION: Record<ExperimentStatus, { label: string; pendingLabel: string; next: ExperimentStatus }> = {
-  draft: { label: 'Start experiment', pendingLabel: 'Starting…', next: 'running' },
-  running: { label: 'Stop experiment', pendingLabel: 'Stopping…', next: 'stopped' },
-  stopped: { label: 'Restart experiment', pendingLabel: 'Restarting…', next: 'running' },
+const NEXT_ACTION: Record<ExperimentStatus, { label: string; next: ExperimentStatus }> = {
+  draft: { label: 'Start experiment', next: 'running' },
+  running: { label: 'Stop experiment', next: 'stopped' },
+  stopped: { label: 'Restart experiment', next: 'running' },
 };
 
 const ALL_STATUSES: ExperimentStatus[] = ['draft', 'running', 'stopped'];
@@ -93,11 +93,11 @@ export function ExperimentStatusControl({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            disabled={pending}
+            loading={pending}
             onClick={handleConfirmStop}
             className="bg-destructive text-white hover:bg-destructive/90"
           >
-            {pending ? 'Stopping…' : 'Stop experiment'}
+            Stop experiment
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -153,7 +153,7 @@ export function ExperimentStatusControl({
     );
   }
 
-  const { label, pendingLabel, next } = NEXT_ACTION[status];
+  const { label, next } = NEXT_ACTION[status];
   // Starting/restarting is constructive (primary, filled); stopping halts
   // traffic but isn't destructive to any data, so it gets a quieter
   // primary-tinted outline instead of the same solid fill.
@@ -163,7 +163,7 @@ export function ExperimentStatusControl({
     <div className="flex flex-col items-end gap-1">
       <Button
         type="button"
-        disabled={pending}
+        loading={pending}
         onClick={() => requestStatus(next)}
         variant={isStopping ? 'outline' : 'default'}
         className={
@@ -172,14 +172,8 @@ export function ExperimentStatusControl({
             : 'bg-primary/85 hover:bg-primary/95'
         }
       >
-        {pending ? (
-          pendingLabel
-        ) : (
-          <>
-            {status === 'draft' && <Rocket />}
-            {label}
-          </>
-        )}
+        {status === 'draft' && <Rocket />}
+        {label}
       </Button>
       {error && <p className="max-w-xs text-right text-xs text-destructive">{error}</p>}
       {confirmDialog}

@@ -5,6 +5,7 @@ import { OperatorSelect } from '@/components/experiment-detail/OperatorSelect';
 import { TagInput } from '@/components/TagInput';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   contextKeyMap,
   maxValuesForOperator,
@@ -14,9 +15,6 @@ import {
   type TargetingRow,
 } from '@/lib/experiment-form';
 import { type ContextKeyType } from '@/lib/targeting-labels';
-
-const SELECT_CLASSES =
-  'mt-2 flex h-12 rounded-md border border-input bg-input-background px-3 py-2 text-base shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
 export function TargetingRulesEditor({
   rows,
@@ -60,10 +58,9 @@ export function TargetingRulesEditor({
           <div key={rule.id} className="flex items-end gap-3">
             <div className="flex-1">
               <Label className="text-sm">Attribute</Label>
-              <select
+              <Select
                 value={rule.attribute}
-                onChange={(e) => {
-                  const nextAttribute = e.target.value;
+                onValueChange={(nextAttribute) => {
                   const nextAllowed = operatorsForAttribute(nextAttribute, contextKeyByName);
                   updateRule(index, {
                     ...rule,
@@ -72,14 +69,18 @@ export function TargetingRulesEditor({
                     value: nextAllowed.includes(rule.operator) ? rule.value : [],
                   });
                 }}
-                className={`${SELECT_CLASSES} w-full`}
               >
-                {contextKeys.map((contextKey) => (
-                  <option key={contextKey.id} value={contextKey.key}>
-                    {contextKey.label || contextKey.key}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="mt-2 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {contextKeys.map((contextKey) => (
+                    <SelectItem key={contextKey.id} value={contextKey.key}>
+                      {contextKey.label || contextKey.key}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label className="text-sm">Operator</Label>

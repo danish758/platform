@@ -1,32 +1,71 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { type MouseEvent } from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useApiRequest } from '@/hooks/useApiRequest';
 
-export function DeleteContextKeyButton({ projectId, keyId, contextKey }: { projectId: string; keyId: string; contextKey: string }) {
+export function DeleteContextKeyButton({
+  projectId,
+  keyId,
+  contextKey,
+  open,
+  onOpenChange,
+}: {
+  projectId: string;
+  keyId: string;
+  contextKey: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const router = useRouter();
   const { run, pending, error } = useApiRequest();
 
+  async function handleConfirm(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    if (pending) return;
+
+    const body = await run(
+      `/api/projects/${projectId}/context-keys/${keyId}`,
+      { method: 'DELETE' },
+      'Failed to delete context key'
+    );
+    if (!body) return;
+
+    onOpenChange(false);
+    router.refresh();
+  }
+
   return (
-    <div className="flex flex-col items-end gap-1">
-      <button
-        type="button"
-        disabled={pending}
-        onClick={async () => {
-          if (!confirm(`Delete context key "${contextKey}"?`)) return;
-          const body = await run(
-            `/api/projects/${projectId}/context-keys/${keyId}`,
-            { method: 'DELETE' },
-            'Failed to delete context key'
-          );
-          if (!body) return;
-          router.refresh();
-        }}
-        className="text-xs font-medium text-destructive hover:underline disabled:opacity-60"
-      >
-        {pending ? 'Deleting…' : 'Delete'}
-      </button>
-      {error && <p className="max-w-xs text-right text-xs text-destructive">{error}</p>}
-    </div>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete &quot;{contextKey}&quot;?</AlertDialogTitle>
+          <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+        </AlertDialogHeader>
+
+        {error && <p className="text-sm text-destructive">{error}</p>}
+
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            loading={pending}
+            onClick={handleConfirm}
+            className="bg-destructive text-white hover:bg-destructive/90"
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

@@ -1,11 +1,12 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
+import { Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -34,21 +35,48 @@ const buttonVariants = cva(
   }
 )
 
+type ButtonContentProps = {
+  loading?: boolean
+  children?: React.ReactNode
+}
+
+// The label stays mounted at zero opacity rather than being swapped out, so the
+// button keeps its resting width and its accessible name while the spinner is
+// overlaid. The wrapper mirrors the button's own flex layout so icon+label
+// spacing (and therefore the width) is identical in both states.
+export function ButtonContent({ loading, children }: ButtonContentProps) {
+  if (!loading) return <>{children}</>
+
+  return (
+    <>
+      <Loader2 className="absolute inset-0 m-auto animate-spin" aria-hidden />
+      <span className="inline-flex items-center gap-2 opacity-0">{children}</span>
+    </>
+  )
+}
+
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
+  loading?: boolean
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, loading = false, disabled, children, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
+        disabled={disabled || loading}
+        aria-busy={loading || undefined}
         {...props}
-      />
+      >
+        {/* Slot takes exactly one child, so asChild buttons render as-is — they
+            can still be disabled, but get no spinner. */}
+        {asChild ? children : <ButtonContent loading={loading}>{children}</ButtonContent>}
+      </Comp>
     )
   }
 )

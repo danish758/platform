@@ -13,10 +13,13 @@ export function ExperimentActionsMenu({
   projectId,
   experimentKey,
   currentSeed,
+  redirectOnDeleteTo,
 }: {
   projectId: string;
   experimentKey: string;
   currentSeed: number;
+  /** Where to navigate after a successful delete — omit to stay on the current page and just refresh (e.g. a table row). */
+  redirectOnDeleteTo?: string;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeDialog, setActiveDialog] = useState<ActiveDialog>(null);
@@ -70,6 +73,7 @@ export function ExperimentActionsMenu({
         experimentKey={experimentKey}
         open={activeDialog === 'delete'}
         onOpenChange={(next) => setActiveDialog(next ? 'delete' : null)}
+        redirectTo={redirectOnDeleteTo}
       />
     </>
   );

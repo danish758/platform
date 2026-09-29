@@ -5,6 +5,7 @@ import type { VariantProps } from 'class-variance-authority';
 import Link from 'next/link';
 import { FC, useMemo, useState } from 'react';
 import { CreateExperimentDialog } from '@/components/CreateExperimentDialog';
+import { ExperimentActionsMenu } from '@/components/ExperimentActionsMenu';
 import { ExperimentStatusControl } from '@/components/ExperimentStatusControl';
 import { Badge, type badgeVariants } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,7 @@ export type ExperimentRow = {
   conversionEvent: string | null;
   createdAt: string;
   result: ResultSummary;
+  seed: number;
 };
 
 type ExperimentsTableProps = { projectId: string; experiments: ExperimentRow[] };
@@ -104,12 +106,13 @@ export const ExperimentsTable: FC<ExperimentsTableProps> = ({ projectId, experim
               <TableHead>Created</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Result</TableHead>
+              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                   {experiments.length === 0 ? 'No experiments yet.' : 'No experiments match.'}
                 </TableCell>
               </TableRow>
@@ -138,6 +141,13 @@ export const ExperimentsTable: FC<ExperimentsTableProps> = ({ projectId, experim
                 </TableCell>
                 <TableCell>
                   <Badge variant={RESULT_VARIANTS[experiment.result.tone]}>{experiment.result.label}</Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <ExperimentActionsMenu
+                    projectId={projectId}
+                    experimentKey={experiment.key}
+                    currentSeed={experiment.seed}
+                  />
                 </TableCell>
               </TableRow>
             ))}

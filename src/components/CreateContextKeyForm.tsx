@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useApiRequest } from '@/hooks/useApiRequest';
 
 export function CreateContextKeyForm({ projectId }: { projectId: string }) {
@@ -38,43 +39,52 @@ export function CreateContextKeyForm({ projectId }: { projectId: string }) {
       <DialogTrigger asChild>
         <Button type="button">New context key</Button>
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>New context key</DialogTitle>
+      <DialogContent className="flex max-h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden border-border bg-card p-0">
+        <DialogHeader className="shrink-0 border-b border-border px-10 py-6">
+          <DialogTitle className="text-2xl">New context key</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label>Key</Label>
-            <Input
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              placeholder="e.g. page"
-              autoFocus
-              className="font-mono"
-            />
-          </div>
-          <div>
-            <Label>Label</Label>
-            <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Page path" required />
-          </div>
-          <div>
-            <Label>Type</Label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as 'string' | 'number')}
-              className="mt-1 flex h-9 w-full rounded-md border border-input bg-input-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="string">string</option>
-              <option value="number">number</option>
-            </select>
+        <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex-1 space-y-6 overflow-y-auto px-10 py-6">
+            <div>
+              <Label>Key</Label>
+              <Input
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                placeholder="e.g. page"
+                autoFocus
+                className="mt-2 font-mono"
+              />
+            </div>
+            <div>
+              <Label>Label</Label>
+              <Input
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder="e.g. Page path"
+                required
+                className="mt-2"
+              />
+            </div>
+            <div>
+              <Label>Type</Label>
+              <Select value={type} onValueChange={(value) => setType(value as 'string' | 'number')}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="string">string</SelectItem>
+                  <SelectItem value="number">number</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
-
-          <DialogFooter>
-            <Button type="submit" disabled={pending || !key || !label.trim()}>
-              {pending ? 'Creating…' : 'Create context key'}
+          <DialogFooter className="shrink-0 flex-row items-center justify-end gap-3 border-t border-border px-10 py-6">
+            <Button type="submit" size="lg" disabled={!key || !label.trim()} loading={pending}>
+              Create context key
             </Button>
           </DialogFooter>
         </form>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, type FC, type MouseEvent } from 'react';
+import { useState, type FC, type FormEvent, type MouseEvent } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,11 +40,7 @@ export const DeleteProjectDialog: FC<DeleteProjectDialogProps> = ({
 
   const canDelete = confirmText === projectName;
 
-  async function handleDelete(event: MouseEvent<HTMLButtonElement>) {
-    // Radix closes the dialog on any Action click by default — prevent that
-    // so the dialog stays open (showing pending/error state) until the
-    // request actually resolves.
-    event.preventDefault();
+  async function submitDelete() {
     if (!canDelete || pending) return;
 
     const body = await run(`/api/projects/${projectId}`, { method: 'DELETE' }, 'Failed to delete project');
@@ -56,6 +52,19 @@ export const DeleteProjectDialog: FC<DeleteProjectDialogProps> = ({
     } else {
       router.refresh();
     }
+  }
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    submitDelete();
+  }
+
+  function handleActionClick(event: MouseEvent<HTMLButtonElement>) {
+    // Radix closes the dialog on any Action click by default — prevent that
+    // so the dialog stays open (showing pending/error state) until the
+    // request actually resolves.
+    event.preventDefault();
+    submitDelete();
   }
 
   return (
@@ -75,25 +84,29 @@ export const DeleteProjectDialog: FC<DeleteProjectDialogProps> = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <div className="space-y-1.5">
-          <label htmlFor="confirm-project-name" className="text-sm font-medium">
-            Type <span className="font-semibold">{projectName}</span> to confirm
-          </label>
-          <Input id="confirm-project-name" value={confirmText} onChange={(e) => setConfirmText(e.target.value)} autoComplete="off" />
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label htmlFor="confirm-project-name" className="text-sm font-medium">
+              Type <span className="font-semibold">{projectName}</span> to confirm
+            </label>
+            <Input id="confirm-project-name" value={confirmText} onChange={(e) => setConfirmText(e.target.value)} autoComplete="off" />
+          </div>
 
-        {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            disabled={!canDelete || pending}
-            onClick={handleDelete}
-            className="bg-destructive text-white hover:bg-destructive/90"
-          >
-            {pending ? 'Deleting…' : 'Delete project'}
-          </AlertDialogAction>
-        </AlertDialogFooter>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              type="submit"
+              disabled={!canDelete}
+              loading={pending}
+              onClick={handleActionClick}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Delete project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </form>
       </AlertDialogContent>
     </AlertDialog>
   );

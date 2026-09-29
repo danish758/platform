@@ -52,27 +52,32 @@ export const NewProjectDialog: FC = () => {
         </button>
       </DialogTrigger>
 
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>New project</DialogTitle>
+      <DialogContent className="flex max-h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden border-border bg-card p-0">
+        <DialogHeader className="shrink-0 border-b border-border px-10 py-6">
+          <DialogTitle className="text-2xl">New project</DialogTitle>
           <DialogDescription>Give it a name — you can add experiments and API keys after.</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-1.5">
-          <Label htmlFor="new-project-name">Project name</Label>
-          <Input
-            id="new-project-name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="e.g. Marketing Site"
-            autoFocus
-            required
-          />
-          {error && <p className="text-sm text-destructive">{error}</p>}
+        <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex-1 space-y-6 overflow-y-auto px-10 py-6">
+            <div>
+              <Label htmlFor="new-project-name">Project name</Label>
+              <Input
+                id="new-project-name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="e.g. Marketing Site"
+                autoFocus
+                required
+                className="mt-2"
+              />
+            </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+          </div>
 
-          <DialogFooter className="pt-2">
-            <Button type="submit" disabled={pending}>
-              {pending ? 'Creating…' : 'Create project'}
+          <DialogFooter className="shrink-0 flex-row items-center justify-end gap-3 border-t border-border px-10 py-6">
+            <Button type="submit" size="lg" loading={pending}>
+              Create project
             </Button>
           </DialogFooter>
         </form>

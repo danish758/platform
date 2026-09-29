@@ -83,7 +83,7 @@ export function VariantAllocationSliders({
                   max={100}
                   value={segment.weight}
                   onChange={(e) => onChangeWeight(index, Number(e.target.value))}
-                  className="h-11 w-20 text-base tabular-nums md:text-base"
+                  className="w-20 tabular-nums"
                 />
                 <span className="text-base text-muted-foreground">%</span>
               </div>
