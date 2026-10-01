@@ -1,44 +1,47 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useApiRequest } from '@/hooks/useApiRequest';
-import { slugify } from '@/lib/experiment-form';
+import { useZodForm } from '@/hooks/useZodForm';
+import { experimentKeyFromName } from '@/lib/experiment-form';
+import { createExperimentSchema } from '@/lib/validation/experiment';
+import { DESCRIPTION_MAX, EXPERIMENT_KEY_MAX, EXPERIMENT_NAME_MAX } from '@/lib/validation/limits';
+
+const formSchema = createExperimentSchema.pick({ name: true, key: true, description: true });
 
 export function CreateExperimentDialog({ projectId }: { projectId: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [key, setKey] = useState('');
   const [keyEdited, setKeyEdited] = useState(false);
-  const [description, setDescription] = useState('');
-  const { run, pending, error } = useApiRequest();
+  const { register, handleSubmit, reset, watch, setValue, formState, assignServerErrors } = useZodForm(formSchema, {
+    defaultValues: { name: '', key: '', description: '' },
+  });
+  const { errors, touchedFields } = formState;
+  const { run, pending, error, clearErrors } = useApiRequest();
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
     if (!next) {
-      setName('');
-      setKey('');
+      reset();
       setKeyEdited(false);
-      setDescription('');
+      clearErrors();
     }
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  const onSubmit = handleSubmit(async (values) => {
     const body = await run<{ experiment: { key: string } }>(
       `/api/projects/${projectId}/experiments`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          key,
-          name,
-          description,
+          ...values,
           status: 'draft',
           conversionEvent: '',
           variants: [
@@ -48,14 +51,15 @@ export function CreateExperimentDialog({ projectId }: { projectId: string }) {
           targeting: [],
         }),
       },
-      'Failed to create experiment'
+      'Failed to create experiment',
+      assignServerErrors
     );
     if (!body) return;
 
     handleOpenChange(false);
-    router.push(`/projects/${projectId}/experiments/${key}`);
+    router.push(`/projects/${projectId}/experiments/${values.key}`);
     router.refresh();
-  }
+  });
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -72,45 +76,45 @@ export function CreateExperimentDialog({ projectId }: { projectId: string }) {
           <DialogTitle className="text-2xl">New experiment</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+        <form onSubmit={onSubmit} noValidate className="flex flex-1 flex-col overflow-hidden">
           <div className="flex-1 space-y-6 overflow-y-auto px-10 py-6">
-            <div>
-              <Label>Name</Label>
+            <FormField
+              id="new-experiment-name"
+              label="Name"
+              error={errors.name}
+              counter={{ value: watch('name'), max: EXPERIMENT_NAME_MAX }}
+            >
               <Input
-                value={name}
-                onChange={(e) => {
-                  const nextName = e.target.value;
-                  setName(nextName);
-                  if (!keyEdited) setKey(slugify(nextName));
-                }}
+                {...register('name', {
+                  onChange: (e) => {
+                    if (keyEdited) return;
+                    // Only re-validate the derived key once it has been shown to the user as touched.
+                    setValue('key', experimentKeyFromName(e.target.value), { shouldValidate: Boolean(touchedFields.key) });
+                  },
+                })}
                 placeholder="e.g. Homepage CTA copy"
                 autoFocus
                 className="mt-2"
               />
-            </div>
-            <div>
-              <Label>Key</Label>
-              <Input
-                value={key}
-                onChange={(e) => {
-                  setKey(e.target.value);
-                  setKeyEdited(true);
-                }}
-                className="mt-2 font-mono"
-              />
-              <p className="mt-2 text-sm text-muted-foreground">
-                Used by the SDK to look up this experiment. Lowercase, hyphens only.
-              </p>
-            </div>
-            <div>
-              <Label>Description (optional)</Label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="mt-2 w-full rounded-md border border-input bg-input-background px-3 py-3 text-base shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                rows={3}
-              />
-            </div>
+            </FormField>
+            <FormField
+              id="new-experiment-key"
+              label="Key"
+              error={errors.key}
+              counter={{ value: watch('key'), max: EXPERIMENT_KEY_MAX }}
+              help="Used by the SDK to look up this experiment. Lowercase letters and numbers, separated by hyphens."
+            >
+              <Input {...register('key', { onChange: () => setKeyEdited(true) })} className="mt-2 font-mono" />
+            </FormField>
+            <FormField
+              id="new-experiment-description"
+              label="Description"
+              optional
+              error={errors.description}
+              counter={{ value: watch('description') ?? '', max: DESCRIPTION_MAX }}
+            >
+              <Textarea {...register('description')} className="mt-2" rows={3} />
+            </FormField>
 
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
@@ -121,7 +125,7 @@ export function CreateExperimentDialog({ projectId }: { projectId: string }) {
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" size="lg" disabled={!name.trim() || !key.trim()} loading={pending}>
+            <Button type="submit" size="lg" loading={pending}>
               Create experiment
             </Button>
           </DialogFooter>

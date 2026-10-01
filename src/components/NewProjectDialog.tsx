@@ -2,7 +2,7 @@
 
 import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState, type FC, type FormEvent } from 'react';
+import { useState, type FC } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -13,33 +13,45 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useApiRequest } from '@/hooks/useApiRequest';
+import { useZodForm } from '@/hooks/useZodForm';
+import { PROJECT_NAME_MAX } from '@/lib/validation/limits';
+import { createProjectSchema } from '@/lib/validation/project';
 
 export const NewProjectDialog: FC = () => {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [name, setName] = useState('');
-  const { run, pending, error } = useApiRequest();
+  const { register, handleSubmit, reset, watch, formState, assignServerErrors } = useZodForm(createProjectSchema, {
+    defaultValues: { name: '' },
+  });
+  const { errors } = formState;
+  const { run, pending, error, clearErrors } = useApiRequest();
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  function handleOpenChange(next: boolean) {
+    setIsOpen(next);
+    if (!next) {
+      reset();
+      clearErrors();
+    }
+  }
 
+  const onSubmit = handleSubmit(async (values) => {
     const body = await run(
       '/api/projects',
-      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) },
-      'Failed to create project'
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) },
+      'Failed to create project',
+      assignServerErrors
     );
     if (!body) return;
 
-    setName('');
-    setIsOpen(false);
+    handleOpenChange(false);
     router.refresh();
-  }
+  });
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <button
           type="button"
@@ -58,20 +70,16 @@ export const NewProjectDialog: FC = () => {
           <DialogDescription>Give it a name — you can add experiments and API keys after.</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+        <form onSubmit={onSubmit} noValidate className="flex flex-1 flex-col overflow-hidden">
           <div className="flex-1 space-y-6 overflow-y-auto px-10 py-6">
-            <div>
-              <Label htmlFor="new-project-name">Project name</Label>
-              <Input
-                id="new-project-name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="e.g. Marketing Site"
-                autoFocus
-                required
-                className="mt-2"
-              />
-            </div>
+            <FormField
+              id="new-project-name"
+              label="Project name"
+              error={errors.name}
+              counter={{ value: watch('name'), max: PROJECT_NAME_MAX }}
+            >
+              <Input {...register('name')} placeholder="e.g. Marketing Site" autoFocus className="mt-2" />
+            </FormField>
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
 

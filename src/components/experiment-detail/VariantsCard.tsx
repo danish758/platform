@@ -4,13 +4,14 @@ import { validateConfig, type ExperimentConfig } from '@cro-engine/assignment-en
 import { Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
+import { LockedWhileRunning } from '@/components/experiment-detail/LockedWhileRunning';
 import { VariantSplitFlow } from '@/components/experiment-detail/VariantSplitFlow';
 import { VariantsEditor } from '@/components/experiment-detail/VariantsEditor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useApiRequest } from '@/hooks/useApiRequest';
-import { newId, type VariantRow } from '@/lib/experiment-form';
+import { newId, variantRowsErrors, type VariantRow } from '@/lib/experiment-form';
 import { equalSplit, rebalanceProportional } from '@/lib/variant-weights';
 
 type VariantInput = { key: string; label: string; weight: number };
@@ -39,11 +40,15 @@ export function VariantsCard({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<VariantRow[]>(() => toRows(variants));
+  const [saveAttempted, setSaveAttempted] = useState(false);
   const { run, pending, error } = useApiRequest();
 
   function handleOpenChange(next: boolean) {
     setOpen(next);
-    if (next) setRows(toRows(variants));
+    if (next) {
+      setRows(toRows(variants));
+      setSaveAttempted(false);
+    }
   }
 
   function handleChangeWeight(index: number, newWeight: number) {
@@ -67,15 +72,23 @@ export function VariantsCard({
     variants: rows.map((row) => ({ key: row.key, weight: row.weight })),
   });
 
+  // Keys already saved are exempt from the key-format rule (see variantListErrors).
+  const storedKeys = new Set(variants.map((variant) => variant.key));
+  const rowErrors = variantRowsErrors(rows, storedKeys);
+  const hasRowErrors = rowErrors.some((errors) => Object.keys(errors).length > 0);
+
   async function handleSave(event: FormEvent) {
     event.preventDefault();
+    setSaveAttempted(true);
+    if (hasRowErrors) return;
+
     const body = await run(
       `/api/projects/${projectId}/experiments/${experimentKey}`,
       {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          variants: rows.map((row) => ({ key: row.key, weight: row.weight, label: row.label.trim() || undefined })),
+          variants: rows.map((row) => ({ key: row.key, weight: row.weight, label: row.label.trim() })),
         }),
       },
       'Failed to save variants'
@@ -93,49 +106,55 @@ export function VariantsCard({
             <p className="mb-1 text-sm font-semibold">Variants</p>
             <p className="mb-4 text-xs text-muted-foreground">How eligible visitors are split across variants.</p>
           </div>
-          <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" aria-label="Edit variants">
-                <Pencil />
-              </Button>
-            </DialogTrigger>
-            <DialogContent
-              className="flex h-[600px] max-h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden border-border bg-card p-0"
-              showCloseButton={false}
-              onPointerDownOutside={(e) => e.preventDefault()}
-              onEscapeKeyDown={(e) => e.preventDefault()}
-            >
-              <DialogHeader className="shrink-0 border-b border-border px-10 py-6">
-                <DialogTitle className="text-2xl">Edit variants</DialogTitle>
-              </DialogHeader>
+          {status === 'running' ? (
+            <LockedWhileRunning />
+          ) : (
+            <Dialog open={open} onOpenChange={handleOpenChange}>
+              <DialogTrigger asChild>
+                <Button type="button" variant="ghost" size="icon" aria-label="Edit variants">
+                  <Pencil />
+                </Button>
+              </DialogTrigger>
+              <DialogContent
+                className="flex h-[600px] max-h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden border-border bg-card p-0"
+                showCloseButton={false}
+                onPointerDownOutside={(e) => e.preventDefault()}
+                onEscapeKeyDown={(e) => e.preventDefault()}
+              >
+                <DialogHeader className="shrink-0 border-b border-border px-10 py-6">
+                  <DialogTitle className="text-2xl">Edit variants</DialogTitle>
+                </DialogHeader>
 
-              <form onSubmit={handleSave} className="flex flex-1 flex-col overflow-hidden">
-                <div className="flex-1 space-y-4 overflow-y-auto px-10 py-6">
-                  <VariantsEditor
-                    variants={rows}
-                    onChange={setRows}
-                    onChangeWeight={handleChangeWeight}
-                    onAdd={handleAdd}
-                    onRemove={handleRemove}
-                    liveErrors={liveErrors}
-                  />
+                <form onSubmit={handleSave} className="flex flex-1 flex-col overflow-hidden">
+                  <div className="flex-1 space-y-4 overflow-y-auto px-10 py-6">
+                    <VariantsEditor
+                      variants={rows}
+                      onChange={setRows}
+                      onChangeWeight={handleChangeWeight}
+                      onAdd={handleAdd}
+                      onRemove={handleRemove}
+                      liveErrors={liveErrors}
+                      rowErrors={rowErrors}
+                      showAllErrors={saveAttempted}
+                    />
 
-                  {error && <p className="text-sm text-destructive">{error}</p>}
-                </div>
+                    {error && <p className="text-sm text-destructive">{error}</p>}
+                  </div>
 
-                <DialogFooter className="shrink-0 flex-row items-center justify-end gap-3 border-t border-border px-10 py-6">
-                  <DialogClose asChild>
-                    <Button type="button" variant="ghost" size="lg">
-                      Cancel
+                  <DialogFooter className="shrink-0 flex-row items-center justify-end gap-3 border-t border-border px-10 py-6">
+                    <DialogClose asChild>
+                      <Button type="button" variant="ghost" size="lg">
+                        Cancel
+                      </Button>
+                    </DialogClose>
+                    <Button type="submit" size="lg" disabled={liveErrors.length > 0} loading={pending}>
+                      Save changes
                     </Button>
-                  </DialogClose>
-                  <Button type="submit" size="lg" disabled={liveErrors.length > 0} loading={pending}>
-                    Save changes
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         <VariantSplitFlow

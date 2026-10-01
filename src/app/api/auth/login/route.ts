@@ -4,15 +4,14 @@ import { prisma } from '@/lib/db';
 import { HTTP_STATUS } from '@/lib/http-status';
 import { verifyPassword } from '@/lib/password';
 import { createSession, SESSION_COOKIE } from '@/lib/session';
+import { loginSchema } from '@/lib/validation/auth';
+import { parseJsonBody } from '@/lib/validation/parse';
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const body = (await request.json().catch(() => null)) as { email?: string; password?: string } | null;
-  const { email: rawEmail = '', password } = body || {};
-  const email = rawEmail.trim().toLowerCase();
-
-  if (!email || !password) {
-    return NextResponse.json({ error: 'Email and password are required' }, { status: HTTP_STATUS.BAD_REQUEST });
-  }
+  const parsed = await parseJsonBody(request, loginSchema);
+  // The login page renders a single `error` string, not an `errors` list.
+  if (!parsed.success) return NextResponse.json({ error: parsed.errors[0] }, { status: HTTP_STATUS.BAD_REQUEST });
+  const { email, password } = parsed.data;
 
   const account = await prisma.account.findUnique({ where: { email } });
   // Same error for "no such account" and "wrong password" — don't leak

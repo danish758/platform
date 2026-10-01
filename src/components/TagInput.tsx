@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { InlineError } from '@/components/ui/inline-error';
 
 /**
  * Type, press Enter, the value becomes a removable chip and the input stays
@@ -9,66 +10,77 @@ import { useState } from 'react';
  * chip. `max` caps how many chips are allowed: single-value operators
  * (eq/gt/lt) pass max={1} and the input disables once a chip exists, rather
  * than silently replacing the existing value on a second Enter.
+ * `maxLength` caps a single value: an over-long draft shows an error and
+ * isn't turned into a chip.
  */
 export function TagInput({
   values,
   onChange,
   type,
   max,
+  maxLength,
 }: {
   values: string[];
   onChange: (next: string[]) => void;
   type: 'string' | 'number';
   max?: number;
+  maxLength?: number;
 }) {
   const [draft, setDraft] = useState('');
   const atMax = max !== undefined && values.length >= max;
+  const draftTooLong = maxLength !== undefined && draft.trim().length > maxLength;
 
   function commitDraft() {
     const trimmed = draft.trim();
-    if (!trimmed) return;
+    if (!trimmed || draftTooLong) return;
     if (type === 'number' && Number.isNaN(Number(trimmed))) return;
     onChange([...values, trimmed]);
     setDraft('');
   }
 
   return (
-    <div className="mt-2 flex min-h-12 flex-wrap items-center gap-2 rounded-md border border-input bg-input-background px-3 py-2.5">
-      {values.map((value, index) => (
-        <span
-          key={`${value}-${index}`}
-          className="flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-sm"
-        >
-          {value}
-          <button
-            type="button"
-            onClick={() => onChange(values.filter((_, valueIndex) => valueIndex !== index))}
-            className="text-muted-foreground hover:text-foreground"
-            aria-label={`Remove ${value}`}
+    <div>
+      <div
+        aria-invalid={draftTooLong}
+        className="mt-2 flex min-h-12 flex-wrap items-center gap-2 rounded-md border border-input bg-input-background px-3 py-2.5 aria-[invalid=true]:border-destructive"
+      >
+        {values.map((value, index) => (
+          <span
+            key={`${value}-${index}`}
+            className="flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-sm"
           >
-            ×
-          </button>
-        </span>
-      ))}
-      <input
-        value={draft}
-        disabled={atMax}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => {
-          // Some environments deliver a keydown without a resolved `.key`
-          // (e.g. `"Unidentified"`) — fall back to the numeric keyCode so
-          // Enter/Backspace still work there.
-          if (e.key === 'Enter' || e.keyCode === 13) {
-            e.preventDefault();
-            commitDraft();
-          } else if ((e.key === 'Backspace' || e.keyCode === 8) && draft === '' && values.length > 0) {
-            onChange(values.slice(0, -1));
-          }
-        }}
-        onBlur={commitDraft}
-        placeholder={atMax ? 'remove to replace' : type === 'number' ? 'number, then Enter' : 'value, then Enter'}
-        className="min-w-[8ch] flex-1 border-none bg-transparent px-1 py-1 text-base outline-none disabled:bg-transparent disabled:placeholder:text-muted-foreground"
-      />
+            {value}
+            <button
+              type="button"
+              onClick={() => onChange(values.filter((_, valueIndex) => valueIndex !== index))}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label={`Remove ${value}`}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        <input
+          value={draft}
+          disabled={atMax}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            // Some environments deliver a keydown without a resolved `.key`
+            // (e.g. `"Unidentified"`) — fall back to the numeric keyCode so
+            // Enter/Backspace still work there.
+            if (e.key === 'Enter' || e.keyCode === 13) {
+              e.preventDefault();
+              commitDraft();
+            } else if ((e.key === 'Backspace' || e.keyCode === 8) && draft === '' && values.length > 0) {
+              onChange(values.slice(0, -1));
+            }
+          }}
+          onBlur={commitDraft}
+          placeholder={atMax ? 'remove to replace' : type === 'number' ? 'number, then Enter' : 'value, then Enter'}
+          className="min-w-[8ch] flex-1 border-none bg-transparent px-1 py-1 text-base outline-none disabled:bg-transparent disabled:placeholder:text-muted-foreground"
+        />
+      </div>
+      {draftTooLong && <InlineError message={`Value must be at most ${maxLength} characters`} />}
     </div>
   );
 }

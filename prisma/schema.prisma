@@ -44,6 +44,11 @@ model Project {
   contextKeys ContextKey[]
   createdAt   DateTime     @default(now())
 
+  // Exact-match backstop for the create route's case-insensitive duplicate
+  // check (which is what users actually hit). A lower(name) expression index
+  // would be stricter, but Prisma can't express one in the schema, and
+  // db push (used by the test DB) would then silently skip it.
+  @@unique([accountId, name])
   @@index([accountId])
 }
 
@@ -96,6 +101,9 @@ model Experiment {
   updatedAt       DateTime         @updatedAt
 
   @@unique([projectId, key])
+  // Exact-match backstop for the routes' case-insensitive name check (same
+  // reasoning as Project's).
+  @@unique([projectId, name])
 }
 
 // An admin-curated, explicit list of attribute names this project's SDK
@@ -116,6 +124,9 @@ model ContextKey {
   createdAt DateTime @default(now())
 
   @@unique([projectId, key])
+  // Backstop for the create route's case-insensitive label check. Postgres
+  // treats NULLs as distinct, so older label-less keys don't conflict.
+  @@unique([projectId, label])
 }
 
 // One row per (projectId, userId, experimentKey) — the same dedup guarantee

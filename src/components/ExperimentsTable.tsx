@@ -146,6 +146,7 @@ export const ExperimentsTable: FC<ExperimentsTableProps> = ({ projectId, experim
                   <ExperimentActionsMenu
                     projectId={projectId}
                     experimentKey={experiment.key}
+                    status={experiment.status}
                     currentSeed={experiment.seed}
                   />
                 </TableCell>

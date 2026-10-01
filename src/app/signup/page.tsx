@@ -3,59 +3,54 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useApiRequest } from '@/hooks/useApiRequest';
+import { useZodForm } from '@/hooks/useZodForm';
+import { signupSchema } from '@/lib/validation/auth';
+import { PASSWORD_MIN } from '@/lib/validation/limits';
 
 export default function SignupPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const { register, handleSubmit, formState, assignServerErrors } = useZodForm(signupSchema, {
+    defaultValues: { email: '', password: '' },
+  });
+  const { errors } = formState;
+  const [redirecting, setRedirecting] = useState(false);
+  const { run, pending, error } = useApiRequest();
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
+  const onSubmit = handleSubmit(async (values) => {
+    const body = await run(
+      '/api/auth/signup',
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) },
+      'Sign up failed',
+      assignServerErrors
+    );
+    if (!body) return;
 
-    const res = await fetch('/api/auth/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      setError(body.error ?? 'Sign up failed');
-      setSubmitting(false);
-      return;
-    }
-
+    setRedirecting(true);
     router.push('/projects');
     router.refresh();
-  }
+  });
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
       <h1 className="text-2xl font-bold">Create an account</h1>
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        <div>
-          <Label>Email</Label>
-          <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-        <div>
-          <Label>Password</Label>
-          <Input
-            type="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <p className="mt-1 text-xs text-muted-foreground">At least 8 characters.</p>
-        </div>
+      <form onSubmit={onSubmit} noValidate className="mt-6 space-y-4">
+        <FormField id="signup-email" label="Email" error={errors.email}>
+          <Input type="email" autoComplete="email" {...register('email')} />
+        </FormField>
+        <FormField
+          id="signup-password"
+          label="Password"
+          error={errors.password}
+          help={`At least ${PASSWORD_MIN} characters.`}
+        >
+          <Input type="password" autoComplete="new-password" {...register('password')} />
+        </FormField>
         {error && <p className="text-sm text-destructive">{error}</p>}
-        <Button type="submit" loading={submitting} className="w-full">
+        {/* Stays in the loading state through the redirect after a successful submit. */}
+        <Button type="submit" loading={pending || redirecting} className="w-full">
           Sign up
         </Button>
       </form>

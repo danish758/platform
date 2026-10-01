@@ -2,15 +2,13 @@ import { NextResponse } from 'next/server';
 import { getCurrentAccount, requireOwnedProject } from '@/lib/authz';
 import { prisma } from '@/lib/db';
 import { HTTP_STATUS } from '@/lib/http-status';
+import { isUniqueConstraintError } from '@/lib/prisma-errors';
+import { createContextKeySchema } from '@/lib/validation/context-key';
+import { parseJsonBody } from '@/lib/validation/parse';
 
-const KEY_RE = /^[a-z0-9][a-z0-9_]*$/;
-const KNOWN_TYPES = new Set(['string', 'number']);
-
-type CreateBody = {
-  key?: string;
-  label?: string;
-  type?: string;
-};
+function labelConflict(label: string): string {
+  return `label "${label}" is already used by another context key`;
+}
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }): Promise<NextResponse> {
   const account = await getCurrentAccount();
@@ -32,35 +30,26 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const project = await requireOwnedProject(account.id, projectId);
   if (!project) return NextResponse.json({ error: 'Project not found' }, { status: HTTP_STATUS.NOT_FOUND });
 
-  const body = (await request.json().catch(() => null)) as CreateBody | null;
-  const { key, label = '', type } = body || {};
-  if (!key || !KEY_RE.test(key)) {
-    return NextResponse.json(
-      { errors: ['key must be lowercase letters, numbers, and underscores only'] },
-      { status: HTTP_STATUS.BAD_REQUEST }
-    );
-  }
-  if (!label.trim()) {
-    return NextResponse.json({ errors: ['label is required'] }, { status: HTTP_STATUS.BAD_REQUEST });
-  }
-  if (!type || !KNOWN_TYPES.has(type)) {
-    return NextResponse.json({ errors: ['type must be "string" or "number"'] }, { status: HTTP_STATUS.BAD_REQUEST });
-  }
+  const parsed = await parseJsonBody(request, createContextKeySchema);
+  if (!parsed.success) return NextResponse.json({ errors: parsed.errors }, { status: HTTP_STATUS.BAD_REQUEST });
+  const { key, label, type } = parsed.data;
+
+  // Case-insensitive: labels are what admins pick from in the targeting editor.
+  const labelTaken = await prisma.contextKey.findFirst({
+    where: { projectId, label: { equals: label, mode: 'insensitive' } },
+    select: { id: true },
+  });
+  if (labelTaken) return NextResponse.json({ errors: [labelConflict(label)] }, { status: HTTP_STATUS.CONFLICT });
 
   try {
-    const contextKey = await prisma.contextKey.create({
-      data: {
-        projectId,
-        key,
-        label: label.trim() || null,
-        type,
-      },
-    });
+    const contextKey = await prisma.contextKey.create({ data: { projectId, key, label, type } });
     return NextResponse.json({ contextKey });
   } catch (err: unknown) {
-    const isUniqueConstraintError = typeof err === 'object' && err !== null && 'code' in err && err.code === 'P2002';
-    if (isUniqueConstraintError) {
-      return NextResponse.json({ errors: [`a context key named "${key}" already exists`] }, { status: HTTP_STATUS.CONFLICT });
+    if (isUniqueConstraintError(err, 'label')) {
+      return NextResponse.json({ errors: [labelConflict(label)] }, { status: HTTP_STATUS.CONFLICT });
+    }
+    if (isUniqueConstraintError(err)) {
+      return NextResponse.json({ errors: [`key "${key}" is already used by another context key`] }, { status: HTTP_STATUS.CONFLICT });
     }
     throw err;
   }

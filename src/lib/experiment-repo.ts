@@ -33,8 +33,31 @@ export function toConfig(row: ExperimentRow): ExperimentConfig {
 
 /** Same source data as toConfig(), but keeps the admin-only `label` field —
  * for the wizard's edit page and the dashboard, which do need it. */
-export function parseVariantsWithLabels(row: ExperimentRow): VariantWithLabel[] {
+export function parseVariantsWithLabels(row: Pick<ExperimentRow, 'variantsJson'>): VariantWithLabel[] {
   return JSON.parse(row.variantsJson);
+}
+
+export function nameConflictMessage(name: string): string {
+  return `name "${name}" is already used by another experiment`;
+}
+
+/** Case-insensitive, so "Checkout CTA" and "checkout cta" count as the same
+ * name. `excludeKey` skips the experiment being renamed. */
+export async function isExperimentNameTaken(projectId: string, name: string, excludeKey?: string): Promise<boolean> {
+  const existing = await prisma.experiment.findFirst({
+    where: { projectId, name: { equals: name, mode: 'insensitive' }, ...(excludeKey && { key: { not: excludeKey } }) },
+    select: { id: true },
+  });
+  return existing !== null;
+}
+
+/** Every experiment key in the project mapped to its variant keys — what an
+ * incoming exposure is checked against before it's allowed into the stats. */
+export async function getVariantKeysByExperiment(projectId: string): Promise<Map<string, Set<string>>> {
+  const rows = await prisma.experiment.findMany({ where: { projectId }, select: { key: true, variantsJson: true } });
+  return new Map(
+    rows.map((row) => [row.key, new Set(parseVariantsWithLabels(row).map((variant) => variant.key))])
+  );
 }
 
 export async function listConfigsForProject(projectId: string): Promise<ExperimentConfig[]> {

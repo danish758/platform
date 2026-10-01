@@ -6,6 +6,12 @@ beforeAll(() => {
   setupTestDatabase();
 }, 30_000);
 
+const SEEDED_EXPERIMENT_KEYS = ['exp-a', 'exp-b', 'exp-x'];
+const SEEDED_VARIANTS_JSON = JSON.stringify([
+  { key: 'control', weight: 50 },
+  { key: 'variant', weight: 50 },
+]);
+
 async function seedProjectWithApiKey() {
   const { prisma } = await import('@/lib/db');
   const { generateApiKey } = await import('@/lib/api-key');
@@ -16,6 +22,10 @@ async function seedProjectWithApiKey() {
   const project = await prisma.project.create({ data: { name: 'Test Project', accountId: account.id } });
   const { raw, hashed } = generateApiKey();
   await prisma.apiKey.create({ data: { projectId: project.id, hashedKey: hashed } });
+  // Exposures are only stored for experiments/variants that actually exist.
+  await prisma.experiment.createMany({
+    data: SEEDED_EXPERIMENT_KEYS.map((key) => ({ projectId: project.id, key, name: key, variantsJson: SEEDED_VARIANTS_JSON })),
+  });
 
   return { projectId: project.id, apiKey: raw };
 }
@@ -69,6 +79,46 @@ describe('POST /api/v1/events — exposure deduplication', () => {
     expect(rowsB).toHaveLength(1);
     expect(rowsA[0]?.variantKey).toBe('control');
     expect(rowsB[0]?.variantKey).toBe('variant');
+  });
+
+  it('returns 400 instead of crashing on a malformed body', async () => {
+    const { POST } = await import('./route');
+    const { apiKey } = await seedProjectWithApiKey();
+
+    const response = await POST(eventsRequest(apiKey, { exposures: 'not-an-array' }));
+    expect(response.status).toBe(400);
+  });
+
+  it('stores the valid events in a batch and reports the invalid ones', async () => {
+    const { POST } = await import('./route');
+    const { prisma } = await import('@/lib/db');
+    const { projectId, apiKey } = await seedProjectWithApiKey();
+
+    const response = await POST(
+      eventsRequest(apiKey, {
+        exposures: [{ userId: 'user-3', experimentKey: 'exp-b', variantKey: 'control' }, { userId: 'user-4' }],
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.accepted).toEqual({ exposures: 1, conversions: 0 });
+    expect(body.rejected).toHaveLength(1);
+    expect(await prisma.exposure.count({ where: { projectId } })).toBe(1);
+  });
+
+  it('drops exposures for an experiment that does not exist in the project', async () => {
+    const { POST } = await import('./route');
+    const { prisma } = await import('@/lib/db');
+    const { projectId, apiKey } = await seedProjectWithApiKey();
+
+    const response = await POST(
+      eventsRequest(apiKey, { exposures: [{ userId: 'user-5', experimentKey: 'not-real', variantKey: 'control' }] })
+    );
+    const body = await response.json();
+
+    expect(body.accepted).toEqual({ exposures: 0, conversions: 0 });
+    expect(await prisma.exposure.count({ where: { projectId } })).toBe(0);
   });
 
   it('conversions are not deduplicated — a user can convert multiple times', async () => {
